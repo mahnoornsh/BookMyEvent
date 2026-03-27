@@ -18,9 +18,17 @@ const EventSchema = new mongoose.Schema({
     type: Date,
     required: [true, 'Date is required']
   },
-  location: {
+  // location: {
+  //   type: String,
+  //   required: [true, 'Location is required']
+  // },
+  venue: {
     type: String,
-    required: [true, 'Location is required']
+    required: [true, 'Venue is required']
+  },
+  city: {
+    type: String,
+    required: [true, 'City is required']
   },
   totalCapacity: {
     type: Number,
@@ -34,10 +42,15 @@ const EventSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  // status: {
+  //   type: String,
+  //   enum: ['draft', 'published'],
+  //   default: 'draft'
+  // },
   status: {
     type: String,
-    enum: ['draft', 'published'],
-    default: 'draft'
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
   },
   organizer: {
     type: mongoose.Schema.Types.ObjectId,
