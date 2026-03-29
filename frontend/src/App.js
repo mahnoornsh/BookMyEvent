@@ -3,76 +3,91 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import HomePage from './pages/HomePage';
+import EventDetailPage from './pages/EventDetailPage';
+import CreateEventPage from './pages/CreateEventPage';
+import Navbar from './components/Navbar';
 import './index.css';
 
-//placeholder pages #Mahnoor
-const HomePage = () => (
+// placeholder pages — to be built in Sprint 2
+{/*const BusinessDashboard = () => (
   <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-    <h1> Customer Home — tbd</h1>
-    <p>Event listing cards will go here.</p>
-  </div>
-);
-const BusinessDashboard = () => (
-  <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-    <h1> Business Dashboard — tbd</h1>
+    <h1>Business Dashboard: </h1>
   </div>
 );
 const AdminDashboard = () => (
   <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-    <h1>🛡 Admin Dashboard</h1>
+    <h1>Admin Dashboard — tbd</h1>
   </div>
-);
+); */}
 
-
-//sends each role to their correct page
+// sends each role to their correct page after login
 const RootRedirect = () => {
   const { isAuthenticated, role, loading } = useAuth();
   if (loading) return <div className="loading-screen">Loading...</div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (role === 'business') return <Navigate to="/business/dashboard" replace />;
-  if (role === 'admin') return <Navigate to="/admin/dashboard" replace />;
+  //if (role === 'business') return <Navigate to="/business/dashboard" replace />;
+  //if (role === 'admin') return <Navigate to="/admin/dashboard" replace />;
   return <Navigate to="/home" replace />;
 };
 
 const AppRoutes = () => (
-  <Routes>
-    {/* public routes */}
-    <Route path="/login"  element={<Login />} />
-    <Route path="/signup" element={<Signup />} />
+  <>
+    <Navbar />
+    <Routes>
+      {/* public routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route
+        path="/home"
+        element={
+          <ProtectedRoute allowedRoles={['user', 'business', 'admin']}>
+            <HomePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/events/:id"
+        element={
+          <ProtectedRoute allowedRoles={['user', 'business', 'admin']}>
+            <EventDetailPage />
+          </ProtectedRoute>
+        }
+      />
 
-    {/* customer routes */}
-    <Route
-      path="/home"
-      element={
-        <ProtectedRoute allowedRoles={['user']}>
-          <HomePage />
-        </ProtectedRoute>
-      }
-    />
+      {/* business routes */}
+      {/*<Route
+        path="/business/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['business']}>
+            <BusinessDashboard />
+          </ProtectedRoute>
+        }
+      />*/}
+      <Route
+        path="/create-event"
+        element={
+          <ProtectedRoute allowedRoles={['business']}>
+            <CreateEventPage />
+          </ProtectedRoute>
+        }
+      />
 
-    {/* business routes */}
-    <Route
-      path="/business/dashboard"
-      element={
-        <ProtectedRoute allowedRoles={['business']}>
-          <BusinessDashboard />
-        </ProtectedRoute>
-      }
-    />
+      {/* admin routes */}
+      {/*<Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminDashboard />
+          </ProtectedRoute>
+      />
+      }*/}
+      
 
-    {/* admin routes */}
-    <Route
-      path="/admin/dashboard"
-      element={
-        <ProtectedRoute allowedRoles={['admin']}>
-          <AdminDashboard />
-        </ProtectedRoute>
-      }
-    />
-
-    {/* ── default: smart redirect ── */}
-    <Route path="*" element={<RootRedirect />} />
-  </Routes>
+      {/* default: redirect based on role */}
+      <Route path="*" element={<RootRedirect />} />
+    </Routes>
+  </>
 );
 
 const App = () => (
