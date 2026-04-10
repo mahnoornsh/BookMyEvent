@@ -26,6 +26,10 @@ const BookingSchema = new mongoose.Schema({
     required: true,
     default: 1
   },
+  pricePaid: {
+    type: Number,
+    default: 0
+  },
   createdAt: {
     type: Date,
     default: Date.now
