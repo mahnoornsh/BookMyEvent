@@ -30,7 +30,7 @@ const register = async (req, res) => {
       name,
       email,
       passwordHash,
-      role: role === 'business' ? 'business' : 'user'
+      role: ['business', 'admin'].includes(role) ? role : 'user'
     });
 
     const token = generateToken(user);
