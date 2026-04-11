@@ -10,14 +10,6 @@ function Navbar() {
     navigate('/login');
   };
 
-  const getDashboardLink = () => {
-    if (role === 'business') return '/business/dashboard';
-    if (role === 'admin') return '/admin/dashboard';
-    return null;
-  };
-
-  const dashboardLink = getDashboardLink();
-
   return (
     <nav style={{
       background: '#1a1a2e',
@@ -51,12 +43,16 @@ function Navbar() {
           </Link>
         )}
 
-        {/* Dashboard links — re-enable in Sprint 2 when dashboards are built */}
-        {/* {isAuthenticated && dashboardLink && (
-        <Link to={dashboardLink} style={{ color: '#a0a0c0', textDecoration: 'none', fontSize: '0.9rem' }}>
-            Dashboard
-        </Link>
-        )} */}
+        {/* Dashboard link for all logged-in users */}
+        {isAuthenticated && (
+          <Link to={
+            role === 'business' ? '/business/dashboard' :
+            role === 'admin' ? '/admin/dashboard' :
+            '/dashboard'
+          } style={{ color: '#a0a0c0', textDecoration: 'none', fontSize: '0.9rem' }}>
+            My Dashboard
+          </Link>
+        )}
 
         {/* show login/signup if not logged in, logout if logged in */}
         {!isAuthenticated ? (
@@ -85,4 +81,5 @@ function Navbar() {
     </nav>
   );
 }
+
 export default Navbar;

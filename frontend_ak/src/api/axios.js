@@ -1,20 +1,17 @@
 import axios from 'axios';
 
-//backend runs on port 8000 [from backend/.env PORT=8000]
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
 });
 
-//automatically attaches JWT token to every request
+//auto attach JWT token to every request
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem('bme_token');
-  if (token) {
-    req.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) req.headers.Authorization = `Bearer ${token}`;
   return req;
 });
 
-//handles expired/invalid token globally — redirects to login
+//auto redirect to login on 401
 API.interceptors.response.use(
   (res) => res,
   (err) => {
@@ -26,4 +23,5 @@ API.interceptors.response.use(
     return Promise.reject(err);
   }
 );
+
 export default API;

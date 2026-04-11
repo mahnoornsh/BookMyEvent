@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import HomePage from './pages/HomePage';
+import UserDashboard from './pages/UserDashboard';
 import EventDetailPage from './pages/EventDetailPage';
 import CreateEventPage from './pages/CreateEventPage';
 import Navbar from './components/Navbar';
@@ -72,7 +73,14 @@ const AppRoutes = () => (
           </ProtectedRoute>
         }
       />
-
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['user', 'business', 'admin']}>
+            <UserDashboard />
+          </ProtectedRoute>
+        }
+/>
       {/* admin routes */}
       {/*<Route
         path="/admin/dashboard"

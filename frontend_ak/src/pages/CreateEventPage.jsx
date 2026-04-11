@@ -16,15 +16,15 @@ function CreateEventPage() {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
 
-    if (name==='price') {
+    if (name === 'price') {
       if (value === '') setErrors(prev => ({ ...prev, price: '' }));
       else if (!/^\d+$/.test(value) || parseInt(value) <= 0)
         setErrors(prev => ({ ...prev, price: 'Price must be a positive whole number (e.g. 500)' }));
       else setErrors(prev => ({ ...prev, price: '' }));
     }
 
-    if (name==='totalCapacity') {
-      if (value==='') setErrors(prev => ({ ...prev, totalCapacity: '' }));
+    if (name === 'totalCapacity') {
+      if (value === '') setErrors(prev => ({ ...prev, totalCapacity: '' }));
       else if (!/^\d+$/.test(value) || parseInt(value) <= 0)
         setErrors(prev => ({ ...prev, totalCapacity: 'Capacity must be a positive whole number (e.g. 200)' }));
       else setErrors(prev => ({ ...prev, totalCapacity: '' }));
@@ -49,7 +49,12 @@ function CreateEventPage() {
       return;
     }
     try {
-      const res = await API.post('/events', form);
+      //parsing numbers before sending - Mongoose req
+      const res = await API.post('/events', {
+        ...form,
+        totalCapacity: parseInt(form.totalCapacity),
+        price: parseInt(form.price),
+      });
       setIsError(false);
       setMessage(res.data.message || 'Event created!');
       setForm({ title: '', description: '', category: '', date: '', venue: '', city: '', totalCapacity: '', price: '' });
