@@ -7,7 +7,8 @@ import { useAuth } from '../context/AuthContext';
 export default function EventDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, role } = useAuth();
+  const canBook = isAuthenticated && role === 'user';
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -128,17 +129,14 @@ export default function EventDetailPage() {
     return (
       <div style={styles.wrapper}>
         <div style={styles.paymentCard}>
-          <h2 style={styles.paymentTitle}>Complete Your Booking</h2>
+          <h2 style={styles.paymentTitle}>Confirm Your Booking</h2>
 
           <div style={styles.orderSummary}>
             <h3 style={styles.summaryHeading}>Order Summary</h3>
             <p style={styles.summaryEvent}>{event.title}</p>
             <p style={styles.summaryMeta}>
               {new Date(event.date).toLocaleDateString('en-PK', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
               })}
             </p>
             <p style={styles.summaryMeta}>{event.venue}, {event.city}</p>
@@ -156,29 +154,11 @@ export default function EventDetailPage() {
             </div>
           </div>
 
-          {/* Mock payment fields */}
           <div style={styles.mockPayment}>
             <p style={styles.mockNote}>
-              🔒 This is a demo payment screen. No real charge will be made.
+              🔒 Payment processing is not available in this version.
+              Click confirm to complete your booking.
             </p>
-            <div style={styles.fakeField}>
-              <label style={styles.fakeLabel}>Card Number</label>
-              <input
-                style={styles.fakeInput}
-                defaultValue="4242 4242 4242 4242"
-                readOnly
-              />
-            </div>
-            <div style={styles.fakeRow}>
-              <div style={styles.fakeField}>
-                <label style={styles.fakeLabel}>Expiry</label>
-                <input style={styles.fakeInput} defaultValue="12/28" readOnly />
-              </div>
-              <div style={styles.fakeField}>
-                <label style={styles.fakeLabel}>CVV</label>
-                <input style={styles.fakeInput} defaultValue="123" readOnly />
-              </div>
-            </div>
           </div>
 
           {bookingError && <p style={styles.errorText}>{bookingError}</p>}
@@ -188,7 +168,7 @@ export default function EventDetailPage() {
             onClick={handleConfirmPayment}
             disabled={bookingLoading}
           >
-            {bookingLoading ? 'Processing...' : `Pay PKR ${total.toLocaleString()}`}
+            {bookingLoading ? 'Processing...' : `Confirm Booking — PKR ${total.toLocaleString()}`}
           </button>
           <button
             style={{ ...styles.secondaryBtn, marginTop: 10 }}
@@ -206,7 +186,20 @@ export default function EventDetailPage() {
   const capacityPercent = event.totalCapacity
     ? Math.round(((event.totalCapacity - (event.remainingCapacity || 0)) / event.totalCapacity) * 100)
     : null;
+  const categoryVisuals = {
+    'Music':        { emoji: '🎵🎸🎤🎶', bg: 'linear-gradient(135deg, #9f7aea, #ccb2fa)' },
+    'Sports':       { emoji: '⚽🏆🏅🎯', bg: 'linear-gradient(135deg, #55a77e, #80cb9d)' },
+    'Comedy':       { emoji: '😂🎭🎪🤣', bg: 'linear-gradient(135deg, #c05621, #f6ad55)' },
+    'Food & Drink': { emoji: '🍕🍜🍷🍰', bg: 'linear-gradient(135deg, #cb4d4d, #f9a9a9)' },
+    'Arts & Culture':{ emoji: '🎨🖼️🎭✨', bg: 'linear-gradient(135deg, #2b6cb0, #63b3ed)' },
+    'Theatre':      { emoji: '🎭🎬🎪🎠', bg: 'linear-gradient(135deg, #702459, #ed64a6)' },
+    'Education':    { emoji: '📚🎓💡🔬', bg: 'linear-gradient(135deg, #2c5282, #76e4f7)' },
+    'Networking':   { emoji: '🤝💼🌐📊', bg: 'linear-gradient(135deg, #1a365d, #4299e1)' },
+    'Family':       { emoji: '👨‍👩‍👧‍👦🎠🎡🎢', bg: 'linear-gradient(135deg, #f6ad55, #fbd38d)' },
+    'Other':        { emoji: '🎉🌟🎊✨', bg: 'linear-gradient(135deg, #553c9a, #b794f4)' },
+  };
 
+  const visual = categoryVisuals[event.category] || categoryVisuals['Other'];
   return (
     <div style={styles.wrapper}>
       {/* Back */}
@@ -215,10 +208,14 @@ export default function EventDetailPage() {
       </button>
 
       <div style={styles.detailCard}>
-        {/* Hero image or colour block */}
-        <div style={styles.heroBlock}>
-          <span style={styles.categoryTag}>{event.category || 'Event'}</span>
-          {isSoldOut && <span style={styles.soldOutBadge}>SOLD OUT</span>}
+        {/* Hero block with visuals */}
+        <div style={{ ...styles.heroBlock, background: visual.bg }}>
+          <div style={styles.heroEmojis}>{visual.emoji}</div>
+
+          <div style={styles.heroOverlay}>
+            <span style={styles.categoryTag}>{event.category || 'Event'}</span>
+            {isSoldOut && <span style={styles.soldOutBadge}>SOLD OUT</span>}
+          </div>
         </div>
 
         {/* Main content */}
@@ -294,12 +291,24 @@ export default function EventDetailPage() {
           )}
 
           {/* Booking panel */}
-          <div style={styles.bookingPanel}>
-            {isSoldOut ? (
-              <div style={styles.soldOutPanel}>
-                <span style={styles.soldOutText}>This event is sold out</span>
-              </div>
-            ) : (
+          {isSoldOut ? (
+            <div style={styles.soldOutPanel}>
+              <span style={styles.soldOutText}>This event is sold out</span>
+            </div>
+          ) : !canBook ? (
+            <div style={styles.soldOutPanel}>
+              <span style={{ color: '#718096', fontSize: 14 }}>
+                {!isAuthenticated
+                  ? 'Please login as a customer to book tickets.'
+                  : 'Only customer accounts can book tickets.'}
+              </span>
+              {!isAuthenticated && (
+                <button style={{ ...styles.primaryBtn, marginTop: 12 }} onClick={() => navigate('/login')}>
+                  Login to Book
+                </button>
+              )}
+            </div>
+          ) : (
               <>
                 <div style={styles.quantityRow}>
                   <label style={styles.qtyLabel}>Tickets</label>
@@ -331,7 +340,6 @@ export default function EventDetailPage() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 
@@ -389,6 +397,25 @@ const styles = {
   heroBlock: {
     background: 'linear-gradient(135deg, #805ad5, #b794f4)',
     height: 200,
+    position: 'relative',
+    overflow: 'hidden'
+  },
+  heroEmojis: {
+    position: 'absolute',
+    fontSize: 56,
+    opacity: 0.5,
+    letterSpacing: 8,
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    whiteSpace: 'nowrap',
+  },
+  heroOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     display: 'flex',
     alignItems: 'flex-start',
     justifyContent: 'space-between',

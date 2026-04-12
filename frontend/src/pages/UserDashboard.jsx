@@ -246,7 +246,7 @@ const styles = {
     fontFamily: "'DM Sans', sans-serif",
   },
   header: {
-    background: 'linear-gradient(135deg, #805ad5, #b794f4)',
+    background: 'linear-gradient(135deg, #a68edb, #c4aaef)',
     padding: '24px 32px',
     display: 'flex',
     justifyContent: 'space-between',
