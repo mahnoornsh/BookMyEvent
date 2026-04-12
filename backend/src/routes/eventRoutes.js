@@ -14,6 +14,17 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/events/my — get events created by the logged-in business user
+router.get('/my', protect, restrictTo('business'), async (req, res) => {
+  try {
+    const events = await Event.find({ organizer: req.user.id })
+      .populate('organizer', 'name email');
+    res.json(events);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 // GET single event by ID — PUBLIC
 router.get('/:id', async (req, res) => {
   try {

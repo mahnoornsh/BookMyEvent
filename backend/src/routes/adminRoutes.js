@@ -81,9 +81,11 @@ router.get('/events', protect, restrictTo('admin'), async (req, res) => {
 router.get('/stats', protect, restrictTo('admin'), async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
-    const totalEvents = await Event.countDocuments();
+    const totalEvents = await Event.countDocuments({ status: 'approved' });
     const totalBookings = await Booking.countDocuments();
-    res.json({ totalUsers, totalEvents, totalBookings });
+    const pendingEvents = await Event.countDocuments({ status: 'pending' });
+    const rejectedEvents = await Event.countDocuments({ status: 'rejected' });
+    res.json({ totalUsers, totalEvents, totalBookings, pendingEvents, rejectedEvents });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
