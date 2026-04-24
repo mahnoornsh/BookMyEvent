@@ -4,10 +4,24 @@ const Event = require('../models/Event');
 const { protect, restrictTo } = require('../middleware/authMiddleware');
 
 // GET all approved events — PUBLIC
+// router.get('/', async (req, res) => {
+//   try {
+//     const events = await Event.find({ status: 'approved' })
+//       .populate('organizer', 'name email');
+//     res.json(events);
+//   } catch (err) {
+//     res.status(500).json({ message: 'Server error', error: err.message });
+//   }
+// });
 router.get('/', async (req, res) => {
   try {
-    const events = await Event.find({ status: 'approved' })
-      .populate('organizer', 'name email');
+    const now = new Date();
+    const query = { status: 'approved', date: { $gte: now } };
+
+    if (req.query.startDate) query.date.$gte = new Date(req.query.startDate);
+    if (req.query.endDate) query.date.$lte = new Date(req.query.endDate);
+
+    const events = await Event.find(query).populate('organizer', 'name email');
     res.json(events);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -43,6 +57,10 @@ router.get('/:id', async (req, res) => {
 // POST create event — business only
 router.post('/', protect, restrictTo('business'), async (req, res) => {
   try {
+    const business = await require('../models/User').findById(req.user.id);
+    if (!business.isApproved) {
+      return res.status(403).json({ message: 'Your business account is pending admin approval. You cannot create events yet.' });
+    }
     const { title, description, category, date, venue, city, totalCapacity, price } = req.body;
     const event = new Event({
       title,
@@ -74,6 +92,16 @@ router.patch('/:id', protect, restrictTo('business'), async (req, res) => {
     if (!event) return res.status(404).json({ message: 'Event not found' });
     if (event.organizer.toString() !== req.user.id) {
       return res.status(403).json({ message: 'You can only edit your own events' });
+    }
+    if (req.body.totalCapacity !== undefined) {
+      const soldTickets = event.totalCapacity - event.remainingCapacity;
+      if (req.body.totalCapacity < soldTickets) {
+        return res.status(400).json({
+          message: `Cannot reduce capacity below ${soldTickets} — that many tickets have already been sold`
+        });
+      }
+      const capacityDiff = req.body.totalCapacity - event.totalCapacity;
+      event.remainingCapacity = event.remainingCapacity + capacityDiff;
     }
     const allowed = ['title', 'description', 'category', 'date', 'venue', 'city', 'totalCapacity', 'price'];
     allowed.forEach(field => {
