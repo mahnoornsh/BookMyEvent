@@ -1,32 +1,40 @@
 const axios = require('axios');
 
 /**
- * Given a venue and city string, calls the Google Geocoding API
+ * Given a venue and city string, calls the Nominatim (OpenStreetMap) API
  * and returns { lat, lng }. Returns { lat: null, lng: null } on failure.
+ *
+ * No API key required. Free to use.
+ * Rate limit: 1 request per second — fine for a dev/student project.
  */
 const geocodeAddress = async (venue, city) => {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   const address = `${venue}, ${city}`;
-
-  if (!apiKey) {
-    console.warn('[geocode] GOOGLE_MAPS_API_KEY not set — skipping geocoding');
-    return { lat: null, lng: null };
-  }
 
   try {
     const response = await axios.get(
-      'https://maps.googleapis.com/maps/api/geocode/json',
-      { params: { address, key: apiKey } }
+      'https://nominatim.openstreetmap.org/search',
+      {
+        params: {
+          q: address,
+          format: 'json',
+          limit: 1,
+        },
+        headers: {
+          // Nominatim requires a User-Agent identifying your app
+          'User-Agent': 'BookMyEvent/1.0 (student project)',
+        },
+      }
     );
 
-    const { status, results } = response.data;
+    const results = response.data;
 
-    if (status !== 'OK' || !results || !results.length) {
-      console.warn(`[geocode] Failed for "${address}" — status: ${status}`);
+    if (!results || results.length === 0) {
+      console.warn(`[geocode] No results for "${address}"`);
       return { lat: null, lng: null };
     }
 
-    const { lat, lng } = results[0].geometry.location;
+    const lat = parseFloat(results[0].lat);
+    const lng = parseFloat(results[0].lon); // Nominatim uses "lon" not "lng"
     console.log(`[geocode] "${address}" → lat: ${lat}, lng: ${lng}`);
     return { lat, lng };
 
