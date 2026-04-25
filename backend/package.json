@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest --testEnvironment=node",
+    "test": "jest --runInBand --forceExit",
+    "test:unit": "jest --testEnvironment=node --testPathPattern=\"(auth|booking|geocode)\\.test\\.js$\" --runInBand --forceExit",
+    "test:integration": "jest --testEnvironment=node --testPathPattern=\"integration\\.test\\.js$\" --runInBand --forceExit",
     "dev": "nodemon server.js",
     "start": "node server.js"
   },
@@ -13,7 +15,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "axios": "^1.15.0",
+    "axios": "^1.15.2",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
@@ -23,6 +25,8 @@
     "mongoose": "^9.3.3"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "jest": "^30.3.0",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
   }
 }

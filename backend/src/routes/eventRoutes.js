@@ -2,17 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Event = require('../models/Event');
 const { protect, restrictTo } = require('../middleware/authMiddleware');
+const { geocodeAddress } = require('../utils/geocode');
 
 // GET all approved events — PUBLIC
-// router.get('/', async (req, res) => {
-//   try {
-//     const events = await Event.find({ status: 'approved' })
-//       .populate('organizer', 'name email');
-//     res.json(events);
-//   } catch (err) {
-//     res.status(500).json({ message: 'Server error', error: err.message });
-//   }
-// });
 router.get('/', async (req, res) => {
   try {
     const now = new Date();
@@ -62,6 +54,10 @@ router.post('/', protect, restrictTo('business'), async (req, res) => {
       return res.status(403).json({ message: 'Your business account is pending admin approval. You cannot create events yet.' });
     }
     const { title, description, category, date, venue, city, totalCapacity, price } = req.body;
+
+    // ── Geocode the venue + city ─────────────────────────────────────────────
+    const { lat, lng } = await geocodeAddress(venue, city);
+
     const event = new Event({
       title,
       description,
@@ -69,6 +65,8 @@ router.post('/', protect, restrictTo('business'), async (req, res) => {
       date,
       venue,
       city,
+      lat,
+      lng,
       totalCapacity,
       remainingCapacity: totalCapacity,
       price,
@@ -103,6 +101,16 @@ router.patch('/:id', protect, restrictTo('business'), async (req, res) => {
       const capacityDiff = req.body.totalCapacity - event.totalCapacity;
       event.remainingCapacity = event.remainingCapacity + capacityDiff;
     }
+
+    // ── Re-geocode if venue or city changed ──────────────────────────────────
+    if (req.body.venue !== undefined || req.body.city !== undefined) {
+      const newVenue = req.body.venue || event.venue;
+      const newCity  = req.body.city  || event.city;
+      const { lat, lng } = await geocodeAddress(newVenue, newCity);
+      event.lat = lat;
+      event.lng = lng;
+    }
+
     const allowed = ['title', 'description', 'category', 'date', 'venue', 'city', 'totalCapacity', 'price'];
     allowed.forEach(field => {
       if (req.body[field] !== undefined) event[field] = req.body[field];

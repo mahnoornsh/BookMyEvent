@@ -18,10 +18,6 @@ const EventSchema = new mongoose.Schema({
     type: Date,
     required: [true, 'Date is required']
   },
-  // location: {
-  //   type: String,
-  //   required: [true, 'Location is required']
-  // },
   venue: {
     type: String,
     required: [true, 'Venue is required']
@@ -30,6 +26,16 @@ const EventSchema = new mongoose.Schema({
     type: String,
     required: [true, 'City is required']
   },
+  // ── Geocoding coordinates ──────────────────────────────────────────────────
+  lat: {
+    type: Number,
+    default: null,
+  },
+  lng: {
+    type: Number,
+    default: null,
+  },
+  // ──────────────────────────────────────────────────────────────────────────
   totalCapacity: {
     type: Number,
     required: [true, 'Total capacity is required']
@@ -42,11 +48,6 @@ const EventSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  // status: {
-  //   type: String,
-  //   enum: ['draft', 'published'],
-  //   default: 'draft'
-  // },
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
