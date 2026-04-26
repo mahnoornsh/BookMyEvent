@@ -7,7 +7,7 @@ router.post('/register', register);
 router.post('/login', login);
 router.post('/logout', logout);
 
-// Test JWT-protected route
+//Test JWT-protected route
 router.get('/protected', protect, (req, res) => {
   res.json({
     message: "Access granted ",

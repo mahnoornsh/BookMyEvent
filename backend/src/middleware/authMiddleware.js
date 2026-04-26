@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-// Checks if user is logged in
+//Checks if user is logged in
 const protect = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
@@ -19,8 +19,8 @@ const protect = (req, res, next) => {
   }
 };
 
-// Checks if user has the right role
-// Usage: restrictTo('admin') or restrictTo('business', 'admin')
+//Checks if user has the right role
+//Usage: restrictTo('admin') or restrictTo('business', 'admin')
 const restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {

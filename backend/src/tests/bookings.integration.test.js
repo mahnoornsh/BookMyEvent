@@ -1,20 +1,11 @@
-/**
- * bookings.integration.test.js
- * Place this file at: backend/src/tests/bookings.integration.test.js
- *
- * Requires a real MongoDB connection via MONGO_URI in your .env
- * Run with: npm test
- */
-
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../app');           // ← correct path from src/tests/
+const app = require('../app');           
 const User = require('../models/User');
 const Event = require('../models/Event');
 const Booking = require('../models/Booking');
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
+//Helpers 
 async function registerAndLogin(role = 'user') {
   const email = `integration-bookings-${role}-${Date.now()}@test.com`;
   await request(app).post('/api/auth/register').send({
@@ -29,7 +20,7 @@ async function registerAndLogin(role = 'user') {
   return { token: loginRes.body.token, email };
 }
 
-/** Creates an approved event via the DB directly (faster than the full flow) */
+//Creates an approved event via the DB directly (faster than the full flow)
 async function createApprovedEvent(organizerId) {
   return Event.create({
     title: 'Bookings Integration Event',
@@ -46,7 +37,7 @@ async function createApprovedEvent(organizerId) {
   });
 }
 
-// ── DB setup ──────────────────────────────────────────────────────────────────
+//DB setup 
 beforeAll(async () => {
   await mongoose.connect(process.env.MONGO_URI);
 });
@@ -61,7 +52,6 @@ beforeEach(async () => {
   await User.deleteMany({ email: /integration-bookings/ });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('POST /api/bookings', () => {
 
   test('authenticated user can book an approved event', async () => {
@@ -116,7 +106,6 @@ describe('POST /api/bookings', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('GET /api/bookings', () => {
 
   test('user can fetch their own bookings', async () => {
@@ -142,7 +131,6 @@ describe('GET /api/bookings', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('PATCH /api/bookings/:id/cancel', () => {
 
   test('user can cancel their own booking', async () => {

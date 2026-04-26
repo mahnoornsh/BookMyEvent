@@ -3,7 +3,7 @@ const Booking = require('../models/Booking');
 const Event = require('../models/Event');
 const { createNotification } = require('./notificationController');
 
-// ─── Helper: generate a short unique booking reference ───────────────────────
+//generate a short unique booking reference 
 const generateBookingRef = () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let ref = 'BME-';
@@ -13,7 +13,7 @@ const generateBookingRef = () => {
   return ref;
 };
 
-// ─── POST /api/bookings ───────────────────────────────────────────────────────
+//POST /api/bookings
 const createBooking = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -34,7 +34,7 @@ const createBooking = async (req, res) => {
       return res.status(400).json({ message: 'Quantity must be at least 1' });
     }
 
-    // ── 1. Check event exists and is approved ──────────────────────────────
+    //Check event exists and is approved 
     const event = await Event.findById(eventId).session(session);
     if (!event) {
       await session.abortTransaction();
@@ -48,7 +48,7 @@ const createBooking = async (req, res) => {
       return res.status(400).json({ message: 'This event is not available for booking' });
     }
 
-    // ── 2. Duplicate booking prevention ───────────────────────────────────
+    //Duplicate booking prevention 
     const existingBooking = await Booking.findOne({
       user: userId,
       event: eventId,
@@ -63,7 +63,7 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // ── 3. Atomic capacity check + decrement ──────────────────────────────
+    //Atomic capacity check + decrement
     const updatedEvent = await Event.findOneAndUpdate(
       { _id: eventId, remainingCapacity: { $gte: quantity } },
       { $inc: { remainingCapacity: -quantity } },
@@ -78,7 +78,7 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // ── 4. Generate unique bookingRef ──────────────────────────────────────
+    //Generate unique bookingRef
     let bookingRef;
     let attempts = 0;
     while (attempts < 5) {
@@ -94,7 +94,7 @@ const createBooking = async (req, res) => {
       return res.status(500).json({ message: 'Could not generate booking reference, try again' });
     }
 
-    // ── 5. Create the booking ──────────────────────────────────────────────
+    //Create the booking
     const booking = await Booking.create(
       [{ event: eventId, user: userId, bookingRef, quantity, status: 'confirmed', pricePaid: event.price * quantity }],
       { session }
@@ -103,14 +103,14 @@ const createBooking = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    // ── 6. Send notifications (after transaction, non-blocking) ───────────
-    // Notify the user who booked (FR-NOT1)
+    //Send notifications (after transaction, non-blocking) 
+    //Notify the user who booked 
     await createNotification(
       userId,
       `Your booking for "${event.title}" is confirmed! Ref: ${bookingRef}`
     );
 
-    // Notify the business organizer (FR-NOT3)
+    //Notify the business organizer 
     await createNotification(
       event.organizer,
       `New booking received for "${event.title}" — ${quantity} ticket${quantity > 1 ? 's' : ''} (Ref: ${bookingRef})`
@@ -130,7 +130,7 @@ const createBooking = async (req, res) => {
   }
 };
 
-// ─── GET /api/bookings ────────────────────────────────────────────────────────
+//GET /api/bookings
 const getMyBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ user: req.user.id })
@@ -143,7 +143,7 @@ const getMyBookings = async (req, res) => {
   }
 };
 
-// ─── PATCH /api/bookings/:id/cancel ──────────────────────────────────────────
+//PATCH /api/bookings/:id/cancel
 const cancelBooking = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -197,7 +197,7 @@ const cancelBooking = async (req, res) => {
   }
 };
 
-// ─── GET /api/bookings/event/:id ─────────────────────────────────────────────
+//GET /api/bookings/event/:id 
 const getBookingsForEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);

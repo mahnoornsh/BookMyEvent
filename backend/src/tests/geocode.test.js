@@ -1,28 +1,20 @@
-/**
- * geocode.test.js
- * Place at: backend/src/tests/geocode.test.js
- *
- * Unit tests for the Nominatim geocoding utility.
- * axios is mocked — no real HTTP calls are made.
- */
+//note: axios is mocked, no real HTTP calls are made.
 
 jest.mock('axios');
 const axios = require('axios');
 const { geocodeAddress } = require('../utils/geocode');
 
-// ── Helper: build a Nominatim-style response ──────────────────────────────────
+//Helper to build a Nominatim-style response 
 const nominatimResponse = (lat, lon) => ({
   data: [{ lat: String(lat), lon: String(lon), display_name: 'Some Place' }],
 });
 
 const emptyResponse = { data: [] };
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 describe('geocodeAddress', () => {
 
   beforeEach(() => jest.clearAllMocks());
-
-  // ── Happy path ──────────────────────────────────────────────────────────────
 
   test('returns lat and lng for a valid address', async () => {
     axios.get.mockResolvedValue(nominatimResponse(24.8607, 67.0011));
@@ -53,8 +45,7 @@ describe('geocodeAddress', () => {
     );
   });
 
-  // ── Failure cases ───────────────────────────────────────────────────────────
-
+  // Failure cases
   test('returns null/null when results array is empty', async () => {
     axios.get.mockResolvedValue(emptyResponse);
 
@@ -82,14 +73,13 @@ describe('geocodeAddress', () => {
     expect(lng).toBeNull();
   });
 
-  // ── Correctly geocodes real Pakistani venues (mocked) ──────────────────────
-
+  //Correctly geocodes real Pakistani venues (mocked)
   const venues = [
-    { venue: 'Expo Centre',       city: 'Karachi',   expectedLat: 24.8607, expectedLng: 67.0011 },
-    { venue: 'Alhamra Arts Council',      city: 'Lahore',    expectedLat: 31.5204, expectedLng: 74.3587 },
-    { venue: 'Pakistan Monument',         city: 'Islamabad', expectedLat: 33.6938, expectedLng: 73.0652 },
-    { venue: 'Pearl Continental Hotel',   city: 'Peshawar',  expectedLat: 34.0151, expectedLng: 71.5249 },
-    { venue: 'Bagh-e-Jinnah',            city: 'Lahore',    expectedLat: 31.5497, expectedLng: 74.3436 },
+    { venue:'Expo Centre', city: 'Karachi', expectedLat: 24.8607, expectedLng: 67.0011 },
+    { venue:'Alhamra Arts Council', city: 'Lahore', expectedLat: 31.5204, expectedLng: 74.3587 },
+    { venue:'Pakistan Monument', city: 'Islamabad', expectedLat: 33.6938, expectedLng: 73.0652 },
+    { venue:'Pearl Continental Hotel', city: 'Peshawar', expectedLat: 34.0151, expectedLng: 71.5249 },
+    { venue:'Bagh-e-Jinnah', city: 'Lahore', expectedLat: 31.5497, expectedLng: 74.3436 },
   ];
 
   test.each(venues)(
@@ -102,7 +92,7 @@ describe('geocodeAddress', () => {
       expect(lat).toBe(expectedLat);
       expect(lng).toBe(expectedLng);
 
-      // Verify the address string is built correctly
+      //Verify the address string is built correctly
       expect(axios.get).toHaveBeenCalledWith(
         'https://nominatim.openstreetmap.org/search',
         expect.objectContaining({

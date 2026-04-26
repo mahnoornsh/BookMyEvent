@@ -153,14 +153,24 @@ export default function BusinessDashboard() {
               <div style={s.cardList}>
                 {events.map(event => {
                   const sc = statusColor(event.status);
+                  const isPast = new Date(event.date).getTime() < Date.now();
+                  const hasBookings = (event.bookingsCount || 0) > 0;
+                  const cannotDelete = isPast || hasBookings;
                   return (
                     <div key={event._id} style={s.eventCard}>
                       <div style={s.eventCardLeft}>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
                           <span style={s.categoryTag}>{event.category}</span>
+
                           <span style={{ ...s.statusPill, backgroundColor: sc.bg, color: sc.color }}>
                             {event.status}
                           </span>
+
+                          {isPast && (
+                            <span style={{ ...s.statusPill, backgroundColor: '#e2e8f0', color: '#718096' }}>
+                              Past
+                            </span>
+                          )}
                         </div>
                         <h3 style={s.eventTitle}>{event.title}</h3>
                         <p style={s.eventMeta}>{event.city} — {event.venue}</p>
@@ -175,15 +185,28 @@ export default function BusinessDashboard() {
                         </p>
                       </div>
                       <div style={s.eventCardActions}>
-                        <button style={s.editBtn} onClick={() => navigate(`/edit-event/${event._id}`)}>
+                        <button
+                          style={isPast ? s.disabledBtn : s.editBtn}
+                          onClick={() => !isPast && navigate(`/edit-event/${event._id}`)}
+                          disabled={isPast}
+                          title={isPast ? 'Cannot edit a past event' : 'Edit event'}
+                        >
                           Edit
                         </button>
                         <button style={s.attendeesBtn} onClick={() => handleViewAttendees(event)}>
                           Attendees
                         </button>
                         <button
-                          style={s.deleteBtn}
-                          onClick={() => setConfirmState({ open: true, eventId: event._id })}
+                          style={cannotDelete ? s.disabledBtn : s.deleteBtn}
+                          onClick={() => !cannotDelete && setConfirmState({ open: true, eventId: event._id })}
+                          disabled={cannotDelete}
+                          title={
+                            isPast
+                              ? 'Cannot delete a past event'
+                              : hasBookings
+                              ? 'Cannot delete event with bookings'
+                              : 'Delete event'
+                          }
                         >
                           Delete
                         </button>
@@ -327,6 +350,16 @@ const s = {
     backgroundColor: 'transparent', color: '#e53e3e',
     border: '1px solid #e53e3e', borderRadius: 8,
     padding: '7px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+  },
+  disabledBtn: {
+    backgroundColor: '#e2e8f0',
+    color: '#a0aec0',
+    border: 'none',
+    borderRadius: 8,
+    padding: '7px 14px',
+    cursor: 'not-allowed',
+    fontSize: 13,
+    fontWeight: 600,
   },
   attendeeSummary: { marginBottom: 16 },
   attendeeCount: { fontSize: 14, fontWeight: 700, color: '#805ad5' },

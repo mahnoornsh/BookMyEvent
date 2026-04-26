@@ -1,12 +1,5 @@
 const axios = require('axios');
 
-/**
- * Given a venue and city string, calls the Nominatim (OpenStreetMap) API
- * and returns { lat, lng }. Returns { lat: null, lng: null } on failure.
- *
- * No API key required. Free to use.
- * Rate limit: 1 request per second — fine for a dev/student project.
- */
 const geocodeAddress = async (venue, city) => {
   const address = `${venue}, ${city}`;
 
@@ -20,7 +13,7 @@ const geocodeAddress = async (venue, city) => {
           limit: 1,
         },
         headers: {
-          // Nominatim requires a User-Agent identifying your app
+          //Nominatim requires a User-Agent identifying your app
           'User-Agent': 'BookMyEvent/1.0 (student project)',
         },
       }
@@ -34,7 +27,7 @@ const geocodeAddress = async (venue, city) => {
     }
 
     const lat = parseFloat(results[0].lat);
-    const lng = parseFloat(results[0].lon); // Nominatim uses "lon" not "lng"
+    const lng = parseFloat(results[0].lon); 
     console.log(`[geocode] "${address}" → lat: ${lat}, lng: ${lng}`);
     return { lat, lng };
 
