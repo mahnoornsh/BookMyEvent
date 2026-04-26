@@ -1,20 +1,11 @@
-/**
- * admin.integration.test.js
- * Place this file at: backend/src/tests/admin.integration.test.js
- *
- * Requires a real MongoDB connection via MONGO_URI in your .env
- * Run with: npm test
- */
-
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../app');           // ← correct path from src/tests/
+const app = require('../app');        
 const User = require('../models/User');
 const Event = require('../models/Event');
 const Booking = require('../models/Booking');
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
+//Helpers 
 async function registerAndLogin(role = 'user') {
   const email = `integration-admin-${role}-${Date.now()}@test.com`;
   await request(app).post('/api/auth/register').send({
@@ -27,7 +18,7 @@ async function registerAndLogin(role = 'user') {
   return { token: loginRes.body.token, email };
 }
 
-// ── DB setup ──────────────────────────────────────────────────────────────────
+//DB setup 
 beforeAll(async () => {
   await mongoose.connect(process.env.MONGO_URI);
 });
@@ -41,7 +32,6 @@ beforeEach(async () => {
   await Event.deleteMany({ title: /Admin Integration Event/ });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('GET /api/admin/users', () => {
 
   test('admin can fetch all users', async () => {
@@ -70,7 +60,7 @@ describe('GET /api/admin/users', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 describe('GET /api/admin/events', () => {
 
   test('admin can fetch all events (all statuses)', async () => {
@@ -85,7 +75,6 @@ describe('GET /api/admin/events', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('GET /api/admin/stats', () => {
 
   test('admin can fetch dashboard stats', async () => {
@@ -103,13 +92,12 @@ describe('GET /api/admin/stats', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('PATCH /api/admin/businesses/:id/approve', () => {
 
   test('admin can approve a business account', async () => {
     const { token: adminToken } = await registerAndLogin('admin');
 
-    // Create a pending business user
+    //Create a pending business user
     const bizEmail = `integration-admin-biz-pending-${Date.now()}@test.com`;
     await request(app).post('/api/auth/register').send({
       name: 'Pending Biz',
@@ -129,7 +117,6 @@ describe('PATCH /api/admin/businesses/:id/approve', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('PATCH /api/admin/users/:id/deactivate', () => {
 
   test('admin can deactivate a user', async () => {

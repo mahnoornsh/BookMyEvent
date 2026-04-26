@@ -7,7 +7,7 @@ const mockRes = () => {
   return res;
 };
 
-// ── Mock the User model ───────────────────────────────────────────────────────
+//Mock the User model 
 jest.mock('../models/User', () => ({
   findOne: jest.fn(),
   create: jest.fn(),
@@ -15,7 +15,7 @@ jest.mock('../models/User', () => ({
 
 const User = require('../models/User');
 
-// ── Mock bcrypt ───────────────────────────────────────────────────────────────
+//Mock bcrypt 
 jest.mock('bcryptjs', () => ({
   hash: jest.fn().mockResolvedValue('hashedpassword'),
   compare: jest.fn(),
@@ -23,15 +23,14 @@ jest.mock('bcryptjs', () => ({
 
 const bcrypt = require('bcryptjs');
 
-// ── Mock jsonwebtoken ─────────────────────────────────────────────────────────
+//Mock jsonwebtoken 
 jest.mock('jsonwebtoken', () => ({
   sign: jest.fn().mockReturnValue('mocktoken'),
 }));
 
-// ── Set JWT_SECRET env var ────────────────────────────────────────────────────
+//Set JWT_SECRET env var 
 process.env.JWT_SECRET = 'testsecret';
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('Auth Controller — register', () => {
 
   beforeEach(() => jest.clearAllMocks());
@@ -86,7 +85,6 @@ describe('Auth Controller — register', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('Auth Controller — login', () => {
 
   beforeEach(() => jest.clearAllMocks());

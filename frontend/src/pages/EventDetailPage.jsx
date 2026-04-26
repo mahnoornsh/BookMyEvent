@@ -4,7 +4,17 @@ import API from '../api/axios';
 import { createBooking } from '../api/bookings';
 import { useAuth } from '../context/AuthContext';
 import Spinner from '../components/Spinner';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
+//fix broken marker icon that leaflet has by default in React
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
 export default function EventDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -189,16 +199,16 @@ export default function EventDetailPage() {
     : null;
 
   const categoryVisuals = {
-    'Music':         { emoji: '🎵🎸🎤🎶', bg: 'linear-gradient(135deg, #9f7aea, #ccb2fa)' },
-    'Sports':        { emoji: '⚽🏆🏅🎯', bg: 'linear-gradient(135deg, #55a77e, #80cb9d)' },
-    'Comedy':        { emoji: '😂🎭🎪🤣', bg: 'linear-gradient(135deg, #c05621, #f6ad55)' },
-    'Food & Drink':  { emoji: '🍕🍜🍷🍰', bg: 'linear-gradient(135deg, #cb4d4d, #f9a9a9)' },
+    'Music': { emoji: '🎵🎸🎤🎶', bg: 'linear-gradient(135deg, #9f7aea, #ccb2fa)' },
+    'Sports': { emoji: '⚽🏆🏅🎯', bg: 'linear-gradient(135deg, #55a77e, #80cb9d)' },
+    'Comedy': { emoji: '😂🎭🎪🤣', bg: 'linear-gradient(135deg, #c05621, #f6ad55)' },
+    'Food & Drink': { emoji: '🍕🍜🍷🍰', bg: 'linear-gradient(135deg, #cb4d4d, #f9a9a9)' },
     'Arts & Culture':{ emoji: '🎨🖼️🎭✨', bg: 'linear-gradient(135deg, #2b6cb0, #63b3ed)' },
-    'Theatre':       { emoji: '🎭🎬🎪🎠', bg: 'linear-gradient(135deg, #702459, #ed64a6)' },
-    'Education':     { emoji: '📚🎓💡🔬', bg: 'linear-gradient(135deg, #2c5282, #76e4f7)' },
-    'Networking':    { emoji: '🤝💼🌐📊', bg: 'linear-gradient(135deg, #1a365d, #4299e1)' },
-    'Family':        { emoji: '👨‍👩‍👧‍👦🎠🎡🎢', bg: 'linear-gradient(135deg, #f6ad55, #fbd38d)' },
-    'Other':         { emoji: '🎉🌟🎊✨', bg: 'linear-gradient(135deg, #553c9a, #b794f4)' },
+    'Theatre': { emoji: '🎭🎬🎪🎠', bg: 'linear-gradient(135deg, #702459, #ed64a6)' },
+    'Education': { emoji: '📚🎓💡🔬', bg: 'linear-gradient(135deg, #2c5282, #76e4f7)' },
+    'Networking': { emoji: '🤝💼🌐📊', bg: 'linear-gradient(135deg, #1a365d, #4299e1)' },
+    'Family': { emoji: '👨‍👩‍👧‍👦🎠🎡🎢', bg: 'linear-gradient(135deg, #f6ad55, #fbd38d)' },
+    'Other': { emoji: '🎉🌟🎊✨', bg: 'linear-gradient(135deg, #553c9a, #b794f4)' },
   };
 
   const visual = categoryVisuals[event.category] || categoryVisuals['Other'];
@@ -210,7 +220,7 @@ export default function EventDetailPage() {
       </button>
 
       <div style={styles.detailCard}>
-        {/* Hero */}
+        {/*Hero*/}
         <div style={{ ...styles.heroBlock, background: visual.bg }}>
           <div style={styles.heroEmojis}>{visual.emoji}</div>
           <div style={styles.heroOverlay}>
@@ -254,7 +264,7 @@ export default function EventDetailPage() {
                 <span style={styles.capacityLabel}>Availability</span>
 
                 {isSoldOut ? (
-                  // Capacity full badge
+                  //Capacity full badge
                   <span style={styles.capacityFullBadge}>
                     🚫 Capacity Full
                   </span>
@@ -294,7 +304,36 @@ export default function EventDetailPage() {
               <p style={styles.descText}>{event.description}</p>
             </div>
           )}
-
+          {/* Map */}
+          {event.lat && event.lng && (
+            <div style={styles.mapSection}>
+              <h3 style={styles.descHeading}>Venue Location</h3>
+              <div style={styles.mapWrapper}>
+                <MapContainer
+                  center={[event.lat, event.lng]}
+                  zoom={15}
+                  style={{ height: '100%', width: '100%', borderRadius: 12 }}
+                  scrollWheelZoom={false}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <Marker position={[event.lat, event.lng]}>
+                    <Popup>{event.venue}, {event.city}</Popup>
+                  </Marker>
+                </MapContainer>
+              </div>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.venue + ' ' + event.city)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={styles.directionsLink}
+              >
+                📍 Get Directions on Google Maps
+              </a>
+            </div>
+          )}
           {/* Booking panel */}
           {isSoldOut ? (
             <div style={styles.soldOutPanel}>
@@ -430,6 +469,18 @@ const styles = {
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     padding: 20,
+  },
+  mapSection: { marginBottom: 24 },
+  mapWrapper: { height: 280, borderRadius: 12, overflow: 'hidden', marginBottom: 10, border: '1px solid #e2e8f0' },
+  directionsLink: {
+    display: 'inline-block',
+    color: '#805ad5',
+    fontSize: 14,
+    fontWeight: 600,
+    textDecoration: 'none',
+    padding: '6px 14px',
+    border: '1px solid #805ad5',
+    borderRadius: 8,
   },
   categoryTag: {
     backgroundColor: 'rgba(255,255,255,0.25)',

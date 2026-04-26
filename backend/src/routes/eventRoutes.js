@@ -5,7 +5,7 @@ const { protect, restrictTo } = require('../middleware/authMiddleware');
 const { geocodeAddress } = require('../utils/geocode');
 const { createNotification } = require('../controllers/notificationController');
 
-// GET all approved events — PUBLIC
+//GET all approved events- PUBLIC
 router.get('/', async (req, res) => {
   try {
     const now = new Date();
@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/events/my — get events created by the logged-in business user
+//GET /api/events/my- get events created by the logged-in business user
 router.get('/my', protect, restrictTo('business'), async (req, res) => {
   try {
     const events = await Event.find({ organizer: req.user.id })
@@ -32,7 +32,7 @@ router.get('/my', protect, restrictTo('business'), async (req, res) => {
   }
 });
 
-// GET single event by ID — PUBLIC
+//GET single event by ID- PUBLIC
 router.get('/:id', async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -47,7 +47,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST create event — business only
+//POST create event: business only
 router.post('/', protect, restrictTo('business'), async (req, res) => {
   try {
     const business = await require('../models/User').findById(req.user.id);
@@ -73,7 +73,7 @@ router.post('/', protect, restrictTo('business'), async (req, res) => {
   }
 });
 
-// PATCH edit event — business only, must be owner
+//PATCH edit event: business only, must be owner
 router.patch('/:id', protect, restrictTo('business'), async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -114,7 +114,7 @@ router.patch('/:id', protect, restrictTo('business'), async (req, res) => {
   }
 });
 
-// DELETE event — business only, must be owner
+//DELETE event: business only, must be owner
 router.delete('/:id', protect, restrictTo('business'), async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -132,7 +132,7 @@ router.delete('/:id', protect, restrictTo('business'), async (req, res) => {
   }
 });
 
-// PATCH approve event — admin only
+//PATCH approve event: admin only
 router.patch('/:id/approve', protect, restrictTo('admin'), async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -145,7 +145,7 @@ router.patch('/:id/approve', protect, restrictTo('admin'), async (req, res) => {
     );
     if (!event) return res.status(404).json({ message: 'Event not found' });
 
-    // Notify the business organizer that their event was approved
+    //Notify the business organizer that their event was approved
     await createNotification(
       event.organizer,
       `Your event "${event.title}" has been approved and is now live!`
@@ -157,7 +157,7 @@ router.patch('/:id/approve', protect, restrictTo('admin'), async (req, res) => {
   }
 });
 
-// PATCH reject event — admin only
+//PATCH reject event- admin only
 router.patch('/:id/reject', protect, restrictTo('admin'), async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -170,7 +170,7 @@ router.patch('/:id/reject', protect, restrictTo('admin'), async (req, res) => {
     );
     if (!event) return res.status(404).json({ message: 'Event not found' });
 
-    // Notify the business organizer that their event was rejected
+    //Notify the business organizer that their event was rejected
     await createNotification(
       event.organizer,
       `Your event "${event.title}" was not approved. Please contact admin for more information.`

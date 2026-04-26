@@ -1,17 +1,9 @@
-/**
- * auth.integration.test.js
- * Place this file at: backend/src/tests/auth.integration.test.js
- *
- * Requires a real MongoDB connection via MONGO_URI in your .env
- * Run with: npm test
- */
-
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../app');           // ← correct path from src/tests/
+const app = require('../app');           
 const User = require('../models/User');
 
-// ── DB setup ──────────────────────────────────────────────────────────────────
+//DB setup 
 beforeAll(async () => {
   await mongoose.connect(process.env.MONGO_URI);
 });
@@ -25,7 +17,7 @@ beforeEach(async () => {
   await User.deleteMany({ email: /integration-auth-test/ });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 describe('POST /api/auth/register', () => {
 
   test('registers a new user and returns a token', async () => {
@@ -65,7 +57,7 @@ describe('POST /api/auth/register', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 describe('POST /api/auth/login', () => {
 
   const email = 'integration-auth-test-login@test.com';

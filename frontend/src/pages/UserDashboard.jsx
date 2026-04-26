@@ -55,14 +55,20 @@ export default function UserDashboard() {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  // const handleLogout = () => {
+  //   logout();
+  //   navigate('/login');
+  // };
 
-  const upcomingBookings = bookings.filter((b) => b.status === 'confirmed');
-  const cancelledBookings = bookings.filter((b) => b.status === 'cancelled');
-
+  const now = new Date();
+  const upcomingBookings = bookings.filter(
+    b => b.status === 'confirmed' && new Date(b.event?.date) >= now
+  );
+  const pastBookings = bookings.filter(
+    b => b.status === 'confirmed' && new Date(b.event?.date) < now
+  );
+  const cancelledBookings = bookings.filter(b => b.status === 'cancelled');
+  
   return (
     <div style={styles.page}>
       {/* Confirm Dialog */}
@@ -84,12 +90,12 @@ export default function UserDashboard() {
           <p style={styles.headerSub}>Welcome back, {user?.name || 'there'} 👋</p>
         </div>
         <div style={styles.headerActions}>
-          <button style={styles.browseBtn} onClick={() => navigate('/home')}>
+          {/* <button style={styles.browseBtn} onClick={() => navigate('/home')}>
             Browse Events
           </button>
           <button style={styles.logoutBtn} onClick={handleLogout}>
             Logout
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -104,7 +110,13 @@ export default function UserDashboard() {
             <span style={{ ...styles.statNumber, color: '#38a169' }}>
               {upcomingBookings.length}
             </span>
-            <span style={styles.statLabel}>Confirmed</span>
+            <span style={styles.statLabel}>Upcoming</span>
+          </div>
+          <div style={styles.statCard}>
+            <span style={{ ...styles.statNumber, color: '#718096' }}>
+              {pastBookings.length}
+            </span>
+            <span style={styles.statLabel}>Past</span>
           </div>
           <div style={styles.statCard}>
             <span style={{ ...styles.statNumber, color: '#e53e3e' }}>
@@ -137,14 +149,64 @@ export default function UserDashboard() {
             />
           ) : (
             <div style={styles.bookingsList}>
-              {bookings.map((booking) => (
-                <BookingCard
-                  key={booking._id}
-                  booking={booking}
-                  onCancel={handleCancelClick}
-                />
-              ))}
-            </div>
+            {/* Upcoming bookings */}
+            {upcomingBookings.length > 0 && (
+              <>
+                <h3 style={styles.subSectionTitle}>Upcoming</h3>
+                {upcomingBookings.map(booking => (
+                  <BookingCard
+                    key={booking._id}
+                    booking={booking}
+                    onCancel={handleCancelClick}
+                  />
+                ))}
+              </>
+            )}
+
+            {/* Past bookings */}
+            {pastBookings.length > 0 && (
+              <>
+                <h3 style={{ ...styles.subSectionTitle, color: '#718096', marginTop: 24 }}>Past Events</h3>
+                {pastBookings.map(booking => (
+                  <BookingCard
+                    key={booking._id}
+                    booking={booking}
+                    onCancel={handleCancelClick}
+                  />
+                ))}
+              </>
+            )}
+
+            {/* Cancelled bookings */}
+            {cancelledBookings.length > 0 && (
+              <>
+                <h3 style={{ ...styles.subSectionTitle, color: '#e53e3e', marginTop: 24 }}>Cancelled</h3>
+                {cancelledBookings.map(booking => (
+                  <BookingCard
+                    key={booking._id}
+                    booking={booking}
+                    onCancel={handleCancelClick}
+                  />
+                ))}
+              </>
+            )}
+
+            {bookings.length === 0 && (
+              <div style={styles.emptyState}>
+                <div style={styles.emptyIcon}>🎟️</div>
+                <p style={styles.emptyTitle}>No bookings yet</p>
+                <p style={styles.emptySubtitle}>
+                  Discover and book events to see them here.
+                </p>
+                <button
+                  style={styles.primaryBtn}
+                  onClick={() => navigate('/home')}
+                >
+                  Browse Events
+                </button>
+              </div>
+            )}
+          </div>
           )}
         </div>
       </div>
@@ -390,5 +452,13 @@ const styles = {
     padding: '10px 16px',
     fontSize: 14,
     marginBottom: 16,
+  },
+  subSectionTitle: {
+    fontSize: 15,
+    fontWeight: 700,
+    color: '#2d3748',
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottom: '1px solid #f0ebff',
   },
 };

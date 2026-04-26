@@ -24,6 +24,7 @@ function EventCard({ event }) {
         <div style={{ display: 'inline-block', background: '#fde8ee', color: '#e8547a', borderRadius: '20px', padding: '3px 12px', fontSize: '0.78rem', fontWeight: '600' }}>
           {event.category}
         </div>
+        
         {isSoldOut && (
           <div style={{ background: '#e53e3e', color: 'white', borderRadius: '20px', padding: '3px 10px', fontSize: '0.75rem', fontWeight: '700', letterSpacing: 0.5 }}>
             SOLD OUT
@@ -54,7 +55,9 @@ function HomePage() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  
   useEffect(() => {
     setLoading(true);
     API.get('/events')
@@ -62,13 +65,24 @@ function HomePage() {
       .catch(() => { setError('Could not load events. Is your backend running?'); setLoading(false); });
   }, []);
 
+  const now = new Date();
+
   const filtered = events.filter(event => {
+    // only approved events
+    if (event.status !== 'approved') return false;
+    // only future events
+    if (new Date(event.date) < now) return false;
+
     const matchesSearch =
       event.title.toLowerCase().includes(search.toLowerCase()) ||
       event.city.toLowerCase().includes(search.toLowerCase()) ||
       event.category.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = activeCategory === 'All' || event.category === activeCategory;
-    return matchesSearch && matchesCategory;
+    const matchesDateRange =
+      (!startDate || new Date(event.date) >= new Date(startDate)) &&
+      (!endDate || new Date(event.date) <= new Date(endDate));
+
+    return matchesSearch && matchesCategory && matchesDateRange;
   });
 
   if (loading) return <Spinner message="Loading events..." />;
@@ -122,7 +136,61 @@ function HomePage() {
             <button key={cat} style={toggleStyle(cat)} onClick={() => setActiveCategory(cat)}>{cat}</button>
           ))}
         </div>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '1.5rem', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.85rem', color: '#8a8aa0', fontWeight: 600 }}>
+            Filter by date:
+          </span>
 
+          <input
+            type="date"
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
+            style={{
+              padding: '0.45rem 0.75rem',
+              border: '1.5px solid #f0d4db',
+              borderRadius: '12px',
+              fontSize: '0.85rem',
+              fontFamily: 'DM Sans, sans-serif',
+              color: '#1c1c2e',
+              outline: 'none',
+              background: 'white',
+            }}
+          />
+
+          <span style={{ fontSize: '0.85rem', color: '#8a8aa0' }}>to</span>
+
+          <input
+            type="date"
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
+            style={{
+              padding: '0.45rem 0.75rem',
+              border: '1.5px solid #f0d4db',
+              borderRadius: '12px',
+              fontSize: '0.85rem',
+              fontFamily: 'DM Sans, sans-serif',
+              color: '#1c1c2e',
+              outline: 'none',
+              background: 'white',
+            }}
+          />
+
+          {(startDate || endDate) && (
+            <button
+              onClick={() => { setStartDate(''); setEndDate(''); }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#e8547a',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                fontWeight: 600
+              }}
+            >
+              Clear dates
+            </button>
+          )}
+        </div>
         {error && <p style={{ color: '#c0243c', textAlign: 'center' }}>{error}</p>}
 
         {filtered.length === 0 ? (
@@ -132,7 +200,7 @@ function HomePage() {
             <p style={{ fontSize: '0.9rem', marginBottom: '1.5rem' }}>
               {activeCategory !== 'All' ? `No events in ${activeCategory} match your search.` : 'No events match your search.'}
             </p>
-            <button onClick={() => { setActiveCategory('All'); setSearch(''); }} style={{ marginTop: '0.5rem', background: 'none', border: '1.5px solid #f0d4db', borderRadius: '12px', padding: '0.5rem 1.25rem', color: '#e8547a', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: '600' }}>
+            <button onClick={() => { setActiveCategory('All'); setSearch(''); setStartDate(''); setEndDate(''); }}>
               Clear filters
             </button>
           </div>

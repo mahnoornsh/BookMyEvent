@@ -3,7 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
 
-// GET my profile — PROTECTED, any logged in user
+//GET my profile- PROTECTED, any logged in user
 router.get('/me', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');

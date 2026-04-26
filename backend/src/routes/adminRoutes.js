@@ -5,7 +5,7 @@ const Event = require('../models/Event');
 const Booking = require('../models/Booking');
 const { protect, restrictTo } = require('../middleware/authMiddleware');
 
-// GET all users — admin only
+//GET all users: admin only
 router.get('/users', protect, restrictTo('admin'), async (req, res) => {
   try {
     const users = await User.find().select('-passwordHash');
@@ -15,7 +15,7 @@ router.get('/users', protect, restrictTo('admin'), async (req, res) => {
   }
 });
 
-// PATCH deactivate a user — admin only
+//PATCH deactivate a user: admin only
 router.patch('/users/:id/deactivate', protect, restrictTo('admin'), async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -33,7 +33,7 @@ router.patch('/users/:id/deactivate', protect, restrictTo('admin'), async (req, 
   }
 });
 
-// PATCH approve business account — admin only
+//PATCH approve business account: admin only
 router.patch('/businesses/:id/approve', protect, restrictTo('admin'), async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -51,7 +51,7 @@ router.patch('/businesses/:id/approve', protect, restrictTo('admin'), async (req
   }
 });
 
-// PATCH reject business account — admin only
+//PATCH reject business account: admin only
 router.patch('/businesses/:id/reject', protect, restrictTo('admin'), async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -68,7 +68,7 @@ router.patch('/businesses/:id/reject', protect, restrictTo('admin'), async (req,
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
-// GET all events (all statuses) — admin only
+//GET all events (all statuses): admin only
 router.get('/events', protect, restrictTo('admin'), async (req, res) => {
   try {
     const events = await Event.find().populate('organizer', 'name email');
@@ -77,7 +77,7 @@ router.get('/events', protect, restrictTo('admin'), async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
-// GET stats — admin only
+//GET stats: admin only
 router.get('/stats', protect, restrictTo('admin'), async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();

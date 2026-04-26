@@ -1,20 +1,11 @@
-/**
- * events.integration.test.js
- * Place this file at: backend/src/tests/events.integration.test.js
- *
- * Requires a real MongoDB connection via MONGO_URI in your .env
- * Run with: npm test
- */
-
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../app');           // ← correct path from src/tests/
+const app = require('../app');           
 const User = require('../models/User');
 const Event = require('../models/Event');
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-/** Register + login a business user and return their token */
+//Helpers 
+//Register + login a business user and return their token
 async function loginBusiness() {
   const email = `integration-events-biz-${Date.now()}@test.com`;
   await request(app).post('/api/auth/register').send({
@@ -23,13 +14,13 @@ async function loginBusiness() {
     password: 'password123',
     role: 'business',
   });
-  // Manually set role + approval in DB (register endpoint defaults to 'user')
+  //Manually set role + approval in DB (register endpoint defaults to 'user')
   await User.findOneAndUpdate({ email }, { role: 'business', isApproved: true });
   const loginRes = await request(app).post('/api/auth/login').send({ email, password: 'password123' });
   return loginRes.body.token;
 }
 
-/** Register + login an admin user and return their token */
+//Register + login an admin user and return their token 
 async function loginAdmin() {
   const email = `integration-events-admin-${Date.now()}@test.com`;
   await request(app).post('/api/auth/register').send({
@@ -55,7 +46,7 @@ const sampleEvent = {
   price: 500,
 };
 
-// ── DB setup ──────────────────────────────────────────────────────────────────
+//DB setup 
 beforeAll(async () => {
   await mongoose.connect(process.env.MONGO_URI);
 });
@@ -69,7 +60,6 @@ beforeEach(async () => {
   await User.deleteMany({ email: /integration-events/ });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('GET /api/events', () => {
 
   test('returns an array of approved future events', async () => {
@@ -80,7 +70,7 @@ describe('GET /api/events', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 describe('POST /api/events', () => {
 
   test('business user can create an event', async () => {
@@ -116,7 +106,6 @@ describe('POST /api/events', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('PATCH /api/events/:id', () => {
 
   test('business owner can edit their event', async () => {
@@ -158,7 +147,6 @@ describe('PATCH /api/events/:id', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('PATCH /api/events/:id/approve', () => {
 
   test('admin can approve a pending event', async () => {
@@ -182,7 +170,6 @@ describe('PATCH /api/events/:id/approve', () => {
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('DELETE /api/events/:id', () => {
 
   test('business owner can delete their event', async () => {

@@ -43,6 +43,11 @@ function CreateEventPage() {
       newErrors.price = 'Price must be a positive whole number (e.g. 500)';
     if (!form.totalCapacity || !/^\d+$/.test(form.totalCapacity) || parseInt(form.totalCapacity) <= 0)
       newErrors.totalCapacity = 'Capacity must be a positive whole number (e.g. 200)';
+    if (!form.date) {
+      newErrors.date = 'Please select a date';
+    } else if (new Date(form.date) < new Date()) {
+      newErrors.date = 'Event date cannot be in the past';
+    }
     return newErrors;
   };
 
@@ -154,7 +159,15 @@ function CreateEventPage() {
 
           <div className="form-group">
             <label>Date & Time</label>
-            <input name="date" type="datetime-local" value={form.date} style={inputStyle} onChange={handleChange} required />
+            <input
+              name="date"
+              type="datetime-local"
+              value={form.date}
+              style={errors.date ? errorInputStyle : inputStyle}
+              onChange={handleChange}
+              required
+            />
+            {errors.date && <span style={fieldErrorStyle}>{errors.date}</span>}
           </div>
           <div className="form-group">
             <label>Venue</label>

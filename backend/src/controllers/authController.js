@@ -10,7 +10,7 @@ const generateToken = (user) => {
   );
 };
 
-// POST /api/auth/register
+//POST /api/auth/register
 const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -51,7 +51,7 @@ const register = async (req, res) => {
   }
 };
 
-// POST /api/auth/login
+//POST /api/auth/login
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -88,7 +88,7 @@ const login = async (req, res) => {
   }
 };
 
-// POST /api/auth/logout
+//POST /api/auth/logout
 const logout = (req, res) => {
   res.status(200).json({ message: 'Logged out successfully' });
 };

@@ -92,9 +92,12 @@ export default function AdminDashboard() {
   const rejectBusiness = async (id) => {
     try {
       await API.patch(`/admin/businesses/${id}/reject`);
-      setPendingBusinesses(prev => prev.filter(b => b._id !== id));
+
+      setPendingBusinesses(prev =>
+        prev.filter(b => b._id !== id)
+      );
+
       showMsg('Business application rejected.');
-      fetchAll();
     } catch (err) {
       showMsg(err.response?.data?.message || 'Failed to reject business.');
     }
@@ -119,8 +122,8 @@ export default function AdminDashboard() {
   const tabs = ['events', 'businesses', 'users'];
 
   const confirmMeta = {
-    rejectEvent:    { title: 'Reject Event',            message: 'Are you sure you want to reject this event?',               label: 'Reject' },
-    deactivateUser: { title: 'Deactivate User',         message: 'Are you sure you want to deactivate this user?',            label: 'Deactivate' },
+    rejectEvent:    { title: 'Reject Event', message: 'Are you sure you want to reject this event?', label: 'Reject' },
+    deactivateUser: { title: 'Deactivate User', message: 'Are you sure you want to deactivate this user?', label: 'Deactivate' },
     rejectBusiness: { title: 'Reject Business Account', message: 'Are you sure you want to reject this business application?', label: 'Reject' },
   };
 
@@ -302,14 +305,22 @@ export default function AdminDashboard() {
                             backgroundColor: u.isApproved === false ? '#fff5f5' : '#f0fff4',
                             color: u.isApproved === false ? '#c53030' : '#276749'
                           }}>
-                            {u.isApproved === false ? 'Inactive' : 'Active'}
+                            <span style={{
+                              ...s.rolePill,
+                              backgroundColor: u.role === 'business' && !u.isApproved ? '#fff5f5' : '#f0fff4',
+                              color: u.role === 'business' && !u.isApproved ? '#c53030' : '#276749'
+                            }}>
+                              {u.role === 'business' && !u.isApproved ? 'Pending Approval' : 'Active'}
+                            </span>
                           </span>
                         </td>
                         <td style={s.td}>
-                          {u.isApproved !== false && u.role !== 'admin' && (
+                          {u.role === 'business' && u.isApproved && (
                             <button
                               style={s.deactivateBtn}
-                              onClick={() => setConfirmState({ open: true, action: 'deactivateUser', id: u._id })}
+                              onClick={() =>
+                                setConfirmState({ open: true, action: 'deactivateUser', id: u._id })
+                              }
                             >
                               Deactivate
                             </button>
