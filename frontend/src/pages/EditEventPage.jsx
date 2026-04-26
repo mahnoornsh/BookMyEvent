@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 import '../styles/auth.css';
 import CATEGORIES from '../data/categories';
+import Spinner from '../components/Spinner';
 
 export default function EditEventPage() {
   const { id } = useParams();
@@ -100,8 +101,10 @@ export default function EditEventPage() {
   const fieldErrorStyle = { color: '#c0243c', fontSize: '0.78rem', marginTop: '4px' };
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', fontFamily: 'DM Sans, sans-serif', color: '#805ad5', fontSize: 18 }}>
-      Loading event...
+    <div className="auth-page">
+      <div className="blob blob-1" />
+      <div className="blob blob-2" />
+      <Spinner message="Loading event details…" size="md" />
     </div>
   );
 
@@ -167,7 +170,17 @@ export default function EditEventPage() {
             {errors.price && <span style={fieldErrorStyle}>{errors.price}</span>}
           </div>
           <button type="submit" className="auth-btn">Save Changes</button>
-          <button type="button" onClick={() => navigate('/business/dashboard')} style={{ marginTop: 10, width: '100%', padding: '0.9rem', background: 'transparent', color: '#e8547a', border: '1.5px solid #e8547a', borderRadius: '16px', fontSize: '1rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+          <button
+            type="button"
+            onClick={() => navigate('/business/dashboard')}
+            style={{
+              marginTop: 10, width: '100%', padding: '0.9rem',
+              background: 'transparent', color: '#e8547a',
+              border: '1.5px solid #e8547a', borderRadius: '16px',
+              fontSize: '1rem', fontWeight: 600, cursor: 'pointer',
+              fontFamily: 'DM Sans, sans-serif'
+            }}
+          >
             Cancel
           </button>
         </form>

@@ -1,0 +1,14 @@
+.empty-state {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 3rem 1.5rem; text-align: center; color: #888;
+}
+.empty-state-icon { font-size: 3.5rem; margin-bottom: 1rem; line-height: 1; }
+.empty-state-title { font-size: 1.2rem; font-weight: 600;
+                     color: #444; margin: 0 0 0.4rem; }
+.empty-state-subtitle { font-size: 0.93rem; color: #888; margin: 0 0 1.25rem; }
+.empty-state-action button, .empty-state-action a {
+  background: #6c63ff; color: #fff; border: none;
+  padding: 0.5rem 1.25rem; border-radius: 8px;
+  cursor: pointer; font-size: 0.95rem; text-decoration: none;
+}

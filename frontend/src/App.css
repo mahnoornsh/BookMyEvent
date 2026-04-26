@@ -36,3 +36,24 @@
     transform: rotate(360deg);
   }
 }
+
+/* Cross browser resets */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Firefox scrollbar */
+* { scrollbar-width: thin; scrollbar-color: #6c63ff #f0f0f0; }
+
+/* Webkit scrollbar (Chrome/Edge) */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f0f0f0; }
+::-webkit-scrollbar-thumb { background: #6c63ff; border-radius: 3px; }
+
+/* Edge/Firefox button normalization */
+button { font-family: inherit; cursor: pointer; }
+
+/* Remove default iOS input styling */
+input, textarea, select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}

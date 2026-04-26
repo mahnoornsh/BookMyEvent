@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUserBookings, cancelBooking } from '../api/bookings';
 import { useAuth } from '../context/AuthContext';
+import Spinner from '../components/Spinner';
+import EmptyState from '../components/EmptyState';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function UserDashboard() {
   const navigate = useNavigate();
@@ -10,8 +13,10 @@ export default function UserDashboard() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [cancellingId, setCancellingId] = useState(null);
   const [cancelError, setCancelError] = useState('');
+
+  //confirm dialog state
+  const [confirmState, setConfirmState] = useState({ open: false, bookingId: null });
 
   useEffect(() => {
     fetchBookings();
@@ -22,7 +27,6 @@ export default function UserDashboard() {
     setError('');
     try {
       const res = await getUserBookings();
-      // Noor's API returns { bookings: [...] }
       setBookings(res.data.bookings || res.data || []);
     } catch (err) {
       setError('Failed to load your bookings. Please try again.');
@@ -31,24 +35,23 @@ export default function UserDashboard() {
     }
   };
 
-  const handleCancel = async (bookingId) => {
-    const confirmed = window.confirm(
-      'Are you sure you want to cancel this booking? This cannot be undone.'
-    );
-    if (!confirmed) return;
+  //opens the confirm dialog instead of window.confirm
+  const handleCancelClick = (bookingId) => {
+    setConfirmState({ open: true, bookingId });
+  };
 
-    setCancellingId(bookingId);
+  //called when user confirms dialog
+  const handleCancelConfirm = async () => {
+    const bookingId = confirmState.bookingId;
+    setConfirmState({ open: false, bookingId: null });
     setCancelError('');
     try {
       await cancelBooking(bookingId);
-      // Refresh the list after cancel
       await fetchBookings();
     } catch (err) {
       setCancelError(
         err.response?.data?.message || 'Failed to cancel booking. Please try again.'
       );
-    } finally {
-      setCancellingId(null);
     }
   };
 
@@ -57,12 +60,23 @@ export default function UserDashboard() {
     navigate('/login');
   };
 
-  // ── Split bookings by status ─────────────────────────────────────────────
   const upcomingBookings = bookings.filter((b) => b.status === 'confirmed');
   const cancelledBookings = bookings.filter((b) => b.status === 'cancelled');
 
   return (
     <div style={styles.page}>
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmState.open}
+        title="Cancel Booking"
+        message="Are you sure you want to cancel this booking? This cannot be undone."
+        confirmLabel="Yes, Cancel"
+        cancelLabel="Keep Booking"
+        danger={true}
+        onConfirm={handleCancelConfirm}
+        onCancel={() => setConfirmState({ open: false, bookingId: null })}
+      />
+
       {/* Header */}
       <div style={styles.header}>
         <div>
@@ -109,31 +123,25 @@ export default function UserDashboard() {
           <h2 style={styles.sectionTitle}>My Bookings</h2>
 
           {loading ? (
-            <div style={styles.emptyState}>
-              <p style={styles.loadingText}>Loading your bookings...</p>
-            </div>
+            <Spinner message="Loading your bookings…" />
           ) : bookings.length === 0 ? (
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>🎟️</div>
-              <p style={styles.emptyTitle}>No bookings yet</p>
-              <p style={styles.emptySubtitle}>
-                Discover and book events to see them here.
-              </p>
-              <button
-                style={styles.primaryBtn}
-                onClick={() => navigate('/home')}
-              >
-                Browse Events
-              </button>
-            </div>
+            <EmptyState
+              icon="📅"
+              title="No bookings yet"
+              subtitle="You haven't booked any events. Browse events to get started!"
+              action={
+                <button style={styles.primaryBtn} onClick={() => navigate('/home')}>
+                  Browse Events
+                </button>
+              }
+            />
           ) : (
             <div style={styles.bookingsList}>
               {bookings.map((booking) => (
                 <BookingCard
                   key={booking._id}
                   booking={booking}
-                  onCancel={handleCancel}
-                  cancelling={cancellingId === booking._id}
+                  onCancel={handleCancelClick}
                 />
               ))}
             </div>
@@ -144,14 +152,12 @@ export default function UserDashboard() {
   );
 }
 
-// ── Booking Card component ───────────────────────────────────────────────────
-function BookingCard({ booking, onCancel, cancelling }) {
+function BookingCard({ booking, onCancel }) {
   const event = booking.event || {};
   const isCancelled = booking.status === 'cancelled';
 
   const eventDate = event.date ? new Date(event.date) : null;
   const isPast = eventDate && eventDate < new Date();
-
   const canCancel = !isCancelled && !isPast;
 
   return (
@@ -218,11 +224,10 @@ function BookingCard({ booking, onCancel, cancelling }) {
 
         {canCancel && (
           <button
-            style={cancelling ? styles.cancelBtnDisabled : styles.cancelBtn}
+            style={styles.cancelBtn}
             onClick={() => onCancel(booking._id)}
-            disabled={cancelling}
           >
-            {cancelling ? 'Cancelling...' : 'Cancel Booking'}
+            Cancel Booking
           </button>
         )}
 
@@ -311,18 +316,6 @@ const styles = {
     borderBottom: '2px solid #f7f3ff',
     paddingBottom: 12,
   },
-  emptyState: {
-    textAlign: 'center',
-    padding: '40px 20px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 8,
-  },
-  emptyIcon: { fontSize: 48, marginBottom: 8 },
-  emptyTitle: { fontSize: 18, fontWeight: 700, color: '#2d3748' },
-  emptySubtitle: { fontSize: 14, color: '#718096', marginBottom: 12 },
-  loadingText: { color: '#805ad5', fontSize: 16 },
   primaryBtn: {
     backgroundColor: '#805ad5',
     color: '#fff',
@@ -386,16 +379,6 @@ const styles = {
     fontSize: 13,
     fontWeight: 600,
     transition: 'all 0.2s',
-  },
-  cancelBtnDisabled: {
-    backgroundColor: 'transparent',
-    color: '#fc8181',
-    border: '1px solid #fc8181',
-    borderRadius: 8,
-    padding: '6px 14px',
-    cursor: 'not-allowed',
-    fontSize: 13,
-    fontWeight: 600,
   },
   cancelledNote: { fontSize: 12, color: '#e53e3e', fontStyle: 'italic' },
   pastNote: { fontSize: 12, color: '#718096', fontStyle: 'italic' },

@@ -32,11 +32,11 @@ const Login = () => {
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     if (!form.email || !form.password) {
       setError('Please fill in all fields.');
       return;
@@ -114,10 +114,10 @@ const Login = () => {
           </button>
         </form>
 
-        <div className="auth-footer">
+        {/* <div className="auth-footer">
           <p>No account? <Link to="/signup">Sign up now</Link></p>
           <Link to="/forgot-password" className="forgot-link">Forgot password</Link>
-        </div>
+        </div> */}
       </div>
     </div>
   );

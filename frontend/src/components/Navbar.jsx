@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationBell from './NotificationBell';
 
 function Navbar() {
   const { isAuthenticated, role, logout } = useAuth();
@@ -36,14 +37,12 @@ function Navbar() {
           Browse Events
         </Link>
 
-        {/* only show Create Event to business users */}
         {isAuthenticated && role === 'business' && (
           <Link to="/create-event" style={{ color: '#a0a0c0', textDecoration: 'none', fontSize: '0.9rem' }}>
             Create Event
           </Link>
         )}
 
-        {/* Dashboard link for all logged-in users */}
         {isAuthenticated && (
           <Link to={
             role === 'business' ? '/business/dashboard' :
@@ -54,7 +53,8 @@ function Navbar() {
           </Link>
         )}
 
-        {/* show login/signup if not logged in, logout if logged in */}
+        {isAuthenticated && <NotificationBell />}
+
         {!isAuthenticated ? (
           <>
             <Link to="/login" style={{

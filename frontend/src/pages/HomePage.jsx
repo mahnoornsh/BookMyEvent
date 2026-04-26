@@ -2,27 +2,48 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 import CATEGORIES from '../data/categories';
+import Spinner from '../components/Spinner';
 
 function EventCard({ event }) {
   const navigate = useNavigate();
+  const isSoldOut = event.remainingCapacity <= 0;
+
   return (
     <div onClick={() => navigate(`/events/${event._id}`)} style={{
       background: 'white', borderRadius: '16px', padding: '1.5rem',
       border: '1px solid #f0d4db', cursor: 'pointer',
       boxShadow: '0 4px 16px rgba(232,84,122,0.07)',
       transition: 'transform 0.2s, box-shadow 0.2s',
-      fontFamily: 'DM Sans, sans-serif'
+      fontFamily: 'DM Sans, sans-serif',
+      opacity: isSoldOut ? 0.75 : 1,
     }}
       onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(232,84,122,0.15)'; }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(232,84,122,0.07)'; }}
     >
-      <div style={{ display: 'inline-block', background: '#fde8ee', color: '#e8547a', borderRadius: '20px', padding: '3px 12px', fontSize: '0.78rem', fontWeight: '600', marginBottom: '0.75rem' }}>
-        {event.category}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+        <div style={{ display: 'inline-block', background: '#fde8ee', color: '#e8547a', borderRadius: '20px', padding: '3px 12px', fontSize: '0.78rem', fontWeight: '600' }}>
+          {event.category}
+        </div>
+        {isSoldOut && (
+          <div style={{ background: '#e53e3e', color: 'white', borderRadius: '20px', padding: '3px 10px', fontSize: '0.75rem', fontWeight: '700', letterSpacing: 0.5 }}>
+            SOLD OUT
+          </div>
+        )}
       </div>
       <h3 style={{ margin: '0 0 6px', color: '#1c1c2e', fontFamily: 'Playfair Display, serif', fontSize: '1.1rem' }}>{event.title}</h3>
       <p style={{ margin: '0 0 4px', color: '#8a8aa0', fontSize: '0.87rem' }}>{event.city} — {event.venue}</p>
       <p style={{ margin: '0 0 12px', color: '#8a8aa0', fontSize: '0.87rem' }}>{new Date(event.date).toDateString()}</p>
-      <p style={{ margin: 0, fontWeight: '700', color: '#e8547a', fontSize: '1rem' }}>Rs. {event.price}</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <p style={{ margin: 0, fontWeight: '700', color: '#e8547a', fontSize: '1rem' }}>Rs. {event.price}</p>
+        {!isSoldOut && event.remainingCapacity !== undefined && (
+          <span style={{ fontSize: '0.78rem', fontWeight: '600', color: event.remainingCapacity <= 10 ? '#e53e3e' : '#38a169' }}>
+            {event.remainingCapacity <= 10 ? `⚠️ ${event.remainingCapacity} left` : `${event.remainingCapacity} available`}
+          </span>
+        )}
+        {isSoldOut && (
+          <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#e53e3e', background: '#fff5f5', borderRadius: 20, padding: '2px 8px' }}>Sold Out</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -35,13 +56,13 @@ function HomePage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    setLoading(true);
     API.get('/events')
       .then(res => { setEvents(res.data); setLoading(false); })
       .catch(() => { setError('Could not load events. Is your backend running?'); setLoading(false); });
   }, []);
 
   const filtered = events.filter(event => {
-    //once admin approval is implemented, only approved events will appear here
     const matchesSearch =
       event.title.toLowerCase().includes(search.toLowerCase()) ||
       event.city.toLowerCase().includes(search.toLowerCase()) ||
@@ -50,11 +71,7 @@ function HomePage() {
     return matchesSearch && matchesCategory;
   });
 
-  if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Sans, sans-serif', color: '#8a8aa0', background: '#fff5f7' }}>
-      Loading events...
-    </div>
-  );
+  if (loading) return <Spinner message="Loading events..." />;
 
   const toggleStyle = (cat) => ({
     padding: '0.45rem 1rem',
@@ -110,8 +127,12 @@ function HomePage() {
 
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '4rem', color: '#8a8aa0' }}>
-            <p style={{ fontSize: '1.1rem' }}>No events found{activeCategory !== 'All' ? ` in ${activeCategory}` : ''}.</p>
-            <button onClick={() => { setActiveCategory('All'); setSearch(''); }} style={{ marginTop: '1rem', background: 'none', border: '1.5px solid #f0d4db', borderRadius: '12px', padding: '0.5rem 1.25rem', color: '#e8547a', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: '600' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎟️</div>
+            <p style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1c1c2e', marginBottom: '0.5rem' }}>No events found</p>
+            <p style={{ fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+              {activeCategory !== 'All' ? `No events in ${activeCategory} match your search.` : 'No events match your search.'}
+            </p>
+            <button onClick={() => { setActiveCategory('All'); setSearch(''); }} style={{ marginTop: '0.5rem', background: 'none', border: '1.5px solid #f0d4db', borderRadius: '12px', padding: '0.5rem 1.25rem', color: '#e8547a', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: '600' }}>
               Clear filters
             </button>
           </div>

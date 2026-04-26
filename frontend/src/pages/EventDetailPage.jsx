@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 import { createBooking } from '../api/bookings';
 import { useAuth } from '../context/AuthContext';
+import Spinner from '../components/Spinner';
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -14,7 +15,6 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  //booking flow state
   const [quantity, setQuantity] = useState(1);
   const [step, setStep] = useState('details'); // 'details' | 'payment' | 'confirmed'
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -38,7 +38,6 @@ export default function EventDetailPage() {
   const isSoldOut = event && event.remainingCapacity <= 0;
   const maxQty = event ? Math.min(10, event.remainingCapacity || 0) : 1;
 
-  //  ser clicks Book Now → go to mock payment
   const handleBookNow = () => {
     if (!isAuthenticated) {
       navigate('/login');
@@ -48,7 +47,6 @@ export default function EventDetailPage() {
     setStep('payment');
   };
 
-  // user confirms on mock payment page → call backend
   const handleConfirmPayment = async () => {
     setBookingLoading(true);
     setBookingError('');
@@ -64,11 +62,11 @@ export default function EventDetailPage() {
     }
   };
 
-  // loading & error states
+  // Replaced plain text loading with Spinner
   if (loading) {
     return (
       <div style={styles.center}>
-        <p style={styles.loadingText}>Loading event...</p>
+        <Spinner message="Loading event…" />
       </div>
     );
   }
@@ -84,7 +82,7 @@ export default function EventDetailPage() {
     );
   }
 
-  //booking confirmed screen 
+  // Booking confirmed screen
   if (step === 'confirmed' && confirmedBooking) {
     return (
       <div style={styles.wrapper}>
@@ -106,10 +104,7 @@ export default function EventDetailPage() {
               <span style={styles.statusBadge}>{confirmedBooking.status}</span>
             </p>
           </div>
-          <button
-            style={styles.primaryBtn}
-            onClick={() => navigate('/dashboard')}
-          >
+          <button style={styles.primaryBtn} onClick={() => navigate('/dashboard')}>
             View My Bookings
           </button>
           <button
@@ -123,7 +118,7 @@ export default function EventDetailPage() {
     );
   }
 
-  // mock payment screen 
+  // Mock payment screen
   if (step === 'payment') {
     const total = (event.price || 0) * quantity;
     return (
@@ -168,7 +163,13 @@ export default function EventDetailPage() {
             onClick={handleConfirmPayment}
             disabled={bookingLoading}
           >
-            {bookingLoading ? 'Processing...' : `Confirm Booking — PKR ${total.toLocaleString()}`}
+            {bookingLoading ? (
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <span className="btn-spinner" /> Processing...
+              </span>
+            ) : (
+              `Confirm Booking — PKR ${total.toLocaleString()}`
+            )}
           </button>
           <button
             style={{ ...styles.secondaryBtn, marginTop: 10 }}
@@ -182,43 +183,42 @@ export default function EventDetailPage() {
     );
   }
 
-  //event details screen
+  // Event details screen
   const capacityPercent = event.totalCapacity
     ? Math.round(((event.totalCapacity - (event.remainingCapacity || 0)) / event.totalCapacity) * 100)
     : null;
+
   const categoryVisuals = {
-    'Music':        { emoji: '🎵🎸🎤🎶', bg: 'linear-gradient(135deg, #9f7aea, #ccb2fa)' },
-    'Sports':       { emoji: '⚽🏆🏅🎯', bg: 'linear-gradient(135deg, #55a77e, #80cb9d)' },
-    'Comedy':       { emoji: '😂🎭🎪🤣', bg: 'linear-gradient(135deg, #c05621, #f6ad55)' },
-    'Food & Drink': { emoji: '🍕🍜🍷🍰', bg: 'linear-gradient(135deg, #cb4d4d, #f9a9a9)' },
+    'Music':         { emoji: '🎵🎸🎤🎶', bg: 'linear-gradient(135deg, #9f7aea, #ccb2fa)' },
+    'Sports':        { emoji: '⚽🏆🏅🎯', bg: 'linear-gradient(135deg, #55a77e, #80cb9d)' },
+    'Comedy':        { emoji: '😂🎭🎪🤣', bg: 'linear-gradient(135deg, #c05621, #f6ad55)' },
+    'Food & Drink':  { emoji: '🍕🍜🍷🍰', bg: 'linear-gradient(135deg, #cb4d4d, #f9a9a9)' },
     'Arts & Culture':{ emoji: '🎨🖼️🎭✨', bg: 'linear-gradient(135deg, #2b6cb0, #63b3ed)' },
-    'Theatre':      { emoji: '🎭🎬🎪🎠', bg: 'linear-gradient(135deg, #702459, #ed64a6)' },
-    'Education':    { emoji: '📚🎓💡🔬', bg: 'linear-gradient(135deg, #2c5282, #76e4f7)' },
-    'Networking':   { emoji: '🤝💼🌐📊', bg: 'linear-gradient(135deg, #1a365d, #4299e1)' },
-    'Family':       { emoji: '👨‍👩‍👧‍👦🎠🎡🎢', bg: 'linear-gradient(135deg, #f6ad55, #fbd38d)' },
-    'Other':        { emoji: '🎉🌟🎊✨', bg: 'linear-gradient(135deg, #553c9a, #b794f4)' },
+    'Theatre':       { emoji: '🎭🎬🎪🎠', bg: 'linear-gradient(135deg, #702459, #ed64a6)' },
+    'Education':     { emoji: '📚🎓💡🔬', bg: 'linear-gradient(135deg, #2c5282, #76e4f7)' },
+    'Networking':    { emoji: '🤝💼🌐📊', bg: 'linear-gradient(135deg, #1a365d, #4299e1)' },
+    'Family':        { emoji: '👨‍👩‍👧‍👦🎠🎡🎢', bg: 'linear-gradient(135deg, #f6ad55, #fbd38d)' },
+    'Other':         { emoji: '🎉🌟🎊✨', bg: 'linear-gradient(135deg, #553c9a, #b794f4)' },
   };
 
   const visual = categoryVisuals[event.category] || categoryVisuals['Other'];
+
   return (
     <div style={styles.wrapper}>
-      {/* Back */}
       <button style={styles.backLink} onClick={() => navigate('/home')}>
         ← Back to Events
       </button>
 
       <div style={styles.detailCard}>
-        {/* Hero block with visuals */}
+        {/* Hero */}
         <div style={{ ...styles.heroBlock, background: visual.bg }}>
           <div style={styles.heroEmojis}>{visual.emoji}</div>
-
           <div style={styles.heroOverlay}>
             <span style={styles.categoryTag}>{event.category || 'Event'}</span>
             {isSoldOut && <span style={styles.soldOutBadge}>SOLD OUT</span>}
           </div>
         </div>
 
-        {/* Main content */}
         <div style={styles.content}>
           <h1 style={styles.eventTitle}>{event.title}</h1>
 
@@ -227,10 +227,7 @@ export default function EventDetailPage() {
               <span style={styles.metaIcon}>📅</span>
               <span>
                 {new Date(event.date).toLocaleDateString('en-PK', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
+                  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
                 })}
               </span>
             </div>
@@ -244,29 +241,34 @@ export default function EventDetailPage() {
             </div>
             {event.organizer && (
               <div style={styles.metaItem}>
-                <span style={styles.metaIcon}></span>
+                <span style={styles.metaIcon}>🏢</span>
                 <span>Organised by {event.organizer?.name || 'Organizer'}</span>
               </div>
             )}
           </div>
 
-          {/* Remaining capacity bar */}
-          {!isSoldOut && event.remainingCapacity !== undefined && (
+          {/* Capacity section — shows sold out badge OR remaining seats */}
+          {event.remainingCapacity !== undefined && (
             <div style={styles.capacitySection}>
               <div style={styles.capacityHeader}>
                 <span style={styles.capacityLabel}>Availability</span>
-                <span
-                  style={
-                    event.remainingCapacity <= 10
-                      ? styles.capacityLow
-                      : styles.capacityOk
-                  }
-                >
-                  {event.remainingCapacity <= 10
-                    ? `⚠️ Only ${event.remainingCapacity} left!`
-                    : `${event.remainingCapacity} tickets available`}
-                </span>
+
+                {isSoldOut ? (
+                  // Capacity full badge
+                  <span style={styles.capacityFullBadge}>
+                    🚫 Capacity Full
+                  </span>
+                ) : event.remainingCapacity <= 10 ? (
+                  <span style={styles.capacityLow}>
+                    ⚠️ Only {event.remainingCapacity} left!
+                  </span>
+                ) : (
+                  <span style={styles.capacityOk}>
+                    {event.remainingCapacity} tickets available
+                  </span>
+                )}
               </div>
+
               {capacityPercent !== null && (
                 <div style={styles.progressBg}>
                   <div
@@ -274,7 +276,10 @@ export default function EventDetailPage() {
                       ...styles.progressFill,
                       width: `${capacityPercent}%`,
                       backgroundColor:
-                        capacityPercent > 80 ? '#e53e3e' : capacityPercent > 50 ? '#dd6b20' : '#38a169',
+                        capacityPercent >= 100 ? '#e53e3e'
+                        : capacityPercent > 80  ? '#e53e3e'
+                        : capacityPercent > 50  ? '#dd6b20'
+                        : '#38a169',
                     }}
                   />
                 </div>
@@ -293,7 +298,13 @@ export default function EventDetailPage() {
           {/* Booking panel */}
           {isSoldOut ? (
             <div style={styles.soldOutPanel}>
-              <span style={styles.soldOutText}>This event is sold out</span>
+              <div style={styles.capacityFullPanel}>
+                <span style={styles.capacityFullIcon}>🎫</span>
+                <p style={styles.capacityFullTitle}>This event is fully booked</p>
+                <p style={styles.capacityFullSub}>
+                  All tickets have been sold. Check back in case of cancellations.
+                </p>
+              </div>
             </div>
           ) : !canBook ? (
             <div style={styles.soldOutPanel}>
@@ -303,43 +314,46 @@ export default function EventDetailPage() {
                   : 'Only customer accounts can book tickets.'}
               </span>
               {!isAuthenticated && (
-                <button style={{ ...styles.primaryBtn, marginTop: 12 }} onClick={() => navigate('/login')}>
+                <button
+                  style={{ ...styles.primaryBtn, marginTop: 12 }}
+                  onClick={() => navigate('/login')}
+                >
                   Login to Book
                 </button>
               )}
             </div>
           ) : (
-              <>
-                <div style={styles.quantityRow}>
-                  <label style={styles.qtyLabel}>Tickets</label>
-                  <div style={styles.qtyStepper}>
-                    <button
-                      style={styles.stepBtn}
-                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    >
-                      −
-                    </button>
-                    <span style={styles.qtyValue}>{quantity}</span>
-                    <button
-                      style={styles.stepBtn}
-                      onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}
-                    >
-                      +
-                    </button>
-                  </div>
-                  <span style={styles.totalPrice}>
-                    PKR {((event.price || 0) * quantity).toLocaleString()}
-                  </span>
+            <>
+              <div style={styles.quantityRow}>
+                <label style={styles.qtyLabel}>Tickets</label>
+                <div style={styles.qtyStepper}>
+                  <button
+                    style={styles.stepBtn}
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  >
+                    −
+                  </button>
+                  <span style={styles.qtyValue}>{quantity}</span>
+                  <button
+                    style={styles.stepBtn}
+                    onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}
+                  >
+                    +
+                  </button>
                 </div>
+                <span style={styles.totalPrice}>
+                  PKR {((event.price || 0) * quantity).toLocaleString()}
+                </span>
+              </div>
 
-                <button style={styles.primaryBtn} onClick={handleBookNow}>
-                  {isAuthenticated ? 'Book Now' : 'Login to Book'}
-                </button>
-              </>
-            )}
-          </div>
+              <button style={styles.primaryBtn} onClick={handleBookNow}>
+                {isAuthenticated ? 'Book Now' : 'Login to Book'}
+              </button>
+            </>
+          )}
         </div>
       </div>
+    </div>
   );
 }
 
@@ -358,7 +372,6 @@ const styles = {
     minHeight: '60vh',
     gap: 16,
   },
-  loadingText: { color: '#805ad5', fontSize: 18 },
   errorText: {
     color: '#e53e3e',
     backgroundColor: '#fff5f5',
@@ -398,7 +411,7 @@ const styles = {
     background: 'linear-gradient(135deg, #805ad5, #b794f4)',
     height: 200,
     position: 'relative',
-    overflow: 'hidden'
+    overflow: 'hidden',
   },
   heroEmojis: {
     position: 'absolute',
@@ -412,10 +425,7 @@ const styles = {
   },
   heroOverlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: 0, left: 0, right: 0, bottom: 0,
     display: 'flex',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
@@ -449,31 +459,49 @@ const styles = {
   metaItem: { display: 'flex', alignItems: 'center', gap: 10, color: '#4a5568', fontSize: 15 },
   metaIcon: { fontSize: 18 },
   capacitySection: { marginBottom: 20 },
-  capacityHeader: { display: 'flex', justifyContent: 'space-between', marginBottom: 6 },
+  capacityHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   capacityLabel: { fontSize: 14, color: '#718096', fontWeight: 600 },
   capacityOk: { fontSize: 14, color: '#38a169', fontWeight: 600 },
   capacityLow: { fontSize: 14, color: '#e53e3e', fontWeight: 600 },
+  capacityFullBadge: {
+    backgroundColor: '#fed7d7',
+    color: '#9b2c2c',
+    borderRadius: 20,
+    padding: '3px 12px',
+    fontSize: 13,
+    fontWeight: 700,
+  },
   progressBg: { height: 8, backgroundColor: '#e2e8f0', borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 4, transition: 'width 0.3s ease' },
   descSection: { marginBottom: 24 },
   descHeading: { fontSize: 17, fontWeight: 700, color: '#2d3748', marginBottom: 8 },
   descText: { fontSize: 15, color: '#4a5568', lineHeight: 1.7 },
-  bookingPanel: {
-    borderTop: '1px solid #e2e8f0',
-    paddingTop: 20,
-    marginTop: 8,
-  },
   soldOutPanel: {
     textAlign: 'center',
     padding: '20px 0',
   },
-  soldOutText: {
-    color: '#e53e3e',
-    fontWeight: 700,
+
+  capacityFullPanel: {
+    backgroundColor: '#fff5f5',
+    border: '1.5px solid #fed7d7',
+    borderRadius: 12,
+    padding: '20px 24px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 6,
+  },
+  capacityFullIcon: { fontSize: 32, marginBottom: 4 },
+  capacityFullTitle: {
     fontSize: 16,
-    border: '2px solid #e53e3e',
-    borderRadius: 8,
-    padding: '10px 24px',
+    fontWeight: 700,
+    color: '#9b2c2c',
+    margin: 0,
+  },
+  capacityFullSub: {
+    fontSize: 13,
+    color: '#c53030',
+    margin: 0,
   },
   quantityRow: {
     display: 'flex',
@@ -486,14 +514,12 @@ const styles = {
   qtyStepper: {
     display: 'flex',
     alignItems: 'center',
-    gap: 0,
     border: '1px solid #e2e8f0',
     borderRadius: 8,
     overflow: 'hidden',
   },
   stepBtn: {
-    width: 36,
-    height: 36,
+    width: 36, height: 36,
     border: 'none',
     backgroundColor: '#f7f3ff',
     color: '#805ad5',
@@ -545,7 +571,6 @@ const styles = {
     cursor: 'not-allowed',
     display: 'block',
   },
-  // Payment screen
   paymentCard: {
     maxWidth: 480,
     margin: '0 auto',
@@ -595,20 +620,6 @@ const styles = {
     color: '#744210',
     marginBottom: 16,
   },
-  fakeField: { marginBottom: 12 },
-  fakeLabel: { display: 'block', fontSize: 13, color: '#718096', marginBottom: 4, fontWeight: 600 },
-  fakeInput: {
-    width: '100%',
-    padding: '10px 12px',
-    border: '1px solid #e2e8f0',
-    borderRadius: 8,
-    fontSize: 15,
-    color: '#4a5568',
-    backgroundColor: '#f7fafc',
-    boxSizing: 'border-box',
-  },
-  fakeRow: { display: 'flex', gap: 12 },
-  // confirmed screen
   confirmedCard: {
     maxWidth: 420,
     margin: '40px auto',
@@ -619,8 +630,7 @@ const styles = {
     boxShadow: '0 4px 24px rgba(128,90,213,0.12)',
   },
   successIcon: {
-    width: 64,
-    height: 64,
+    width: 64, height: 64,
     borderRadius: '50%',
     backgroundColor: '#c6f6d5',
     color: '#276749',

@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import Spinner from '../components/Spinner';
+import EmptyState from '../components/EmptyState';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function BusinessDashboard() {
   const navigate = useNavigate();
@@ -14,18 +17,19 @@ export default function BusinessDashboard() {
   const [attendeesEventTitle, setAttendeesEventTitle] = useState('');
   const [attendeesLoading, setAttendeesLoading] = useState(false);
   const [actionMsg, setActionMsg] = useState('');
+  const [confirmState, setConfirmState] = useState({ open: false, eventId: null });
 
   useEffect(() => { fetchMyEvents(); }, []);
 
   const fetchMyEvents = async () => {
     setLoading(true);
     try {
-        const res = await API.get('/events/my');
-        setEvents(res.data);
+      const res = await API.get('/events/my');
+      setEvents(res.data);
     } catch (err) {
-        console.error(err);
+      console.error(err);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -35,7 +39,6 @@ export default function BusinessDashboard() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this event? This cannot be undone.')) return;
     try {
       await API.delete(`/events/${id}`);
       setEvents(prev => prev.filter(e => e._id !== id));
@@ -43,6 +46,11 @@ export default function BusinessDashboard() {
     } catch (err) {
       showMsg(err.response?.data?.message || 'Failed to delete event.');
     }
+  };
+
+  const handleConfirmDelete = () => {
+    handleDelete(confirmState.eventId);
+    setConfirmState({ open: false, eventId: null });
   };
 
   const handleViewAttendees = async (event) => {
@@ -69,8 +77,8 @@ export default function BusinessDashboard() {
   };
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', fontFamily: 'DM Sans, sans-serif', color: '#805ad5', fontSize: 18 }}>
-      Loading dashboard...
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', fontFamily: 'DM Sans, sans-serif' }}>
+      <Spinner message="Loading dashboard…" size="lg" />
     </div>
   );
 
@@ -96,10 +104,10 @@ export default function BusinessDashboard() {
         {/* Stats */}
         <div style={s.statsRow}>
           {[
-            { label: 'Total Events', value: events.length, color: '#805ad5' },
-            { label: 'Approved', value: events.filter(e => e.status === 'approved').length, color: '#38a169' },
-            { label: 'Pending', value: events.filter(e => e.status === 'pending').length, color: '#dd6b20' },
-            { label: 'Rejected', value: events.filter(e => e.status === 'rejected').length, color: '#e53e3e' },
+            { label: 'Total Events', value: events.length,                                      color: '#805ad5' },
+            { label: 'Approved',     value: events.filter(e => e.status === 'approved').length, color: '#38a169' },
+            { label: 'Pending',      value: events.filter(e => e.status === 'pending').length,  color: '#dd6b20' },
+            { label: 'Rejected',     value: events.filter(e => e.status === 'rejected').length, color: '#e53e3e' },
           ].map(stat => (
             <div key={stat.label} style={s.statCard}>
               <span style={{ ...s.statNum, color: stat.color }}>{stat.value}</span>
@@ -110,11 +118,17 @@ export default function BusinessDashboard() {
 
         {/* Tabs */}
         <div style={s.tabRow}>
-          <button style={{ ...s.tabBtn, ...(activeTab === 'events' ? s.tabActive : {}) }} onClick={() => setActiveTab('events')}>
+          <button
+            style={{ ...s.tabBtn, ...(activeTab === 'events' ? s.tabActive : {}) }}
+            onClick={() => setActiveTab('events')}
+          >
             My Events
           </button>
           {attendees !== null && (
-            <button style={{ ...s.tabBtn, ...(activeTab === 'attendees' ? s.tabActive : {}) }} onClick={() => setActiveTab('attendees')}>
+            <button
+              style={{ ...s.tabBtn, ...(activeTab === 'attendees' ? s.tabActive : {}) }}
+              onClick={() => setActiveTab('attendees')}
+            >
               Attendees — {attendeesEventTitle}
             </button>
           )}
@@ -125,12 +139,16 @@ export default function BusinessDashboard() {
           <div style={s.section}>
             <h2 style={s.sectionTitle}>My Events</h2>
             {events.length === 0 ? (
-              <div style={s.empty}>
-                <p style={s.emptyText}>You haven't created any events yet.</p>
-                <button style={s.createBtn} onClick={() => navigate('/create-event')}>
-                  Create your first event
-                </button>
-              </div>
+              <EmptyState
+                icon="📋"
+                title="No events created yet"
+                subtitle="You haven't created any events. Create your first event to get started!"
+                action={
+                  <button style={s.createBtn} onClick={() => navigate('/create-event')}>
+                    Create your first event
+                  </button>
+                }
+              />
             ) : (
               <div style={s.cardList}>
                 {events.map(event => {
@@ -163,7 +181,10 @@ export default function BusinessDashboard() {
                         <button style={s.attendeesBtn} onClick={() => handleViewAttendees(event)}>
                           Attendees
                         </button>
-                        <button style={s.deleteBtn} onClick={() => handleDelete(event._id)}>
+                        <button
+                          style={s.deleteBtn}
+                          onClick={() => setConfirmState({ open: true, eventId: event._id })}
+                        >
                           Delete
                         </button>
                       </div>
@@ -180,11 +201,15 @@ export default function BusinessDashboard() {
           <div style={s.section}>
             <h2 style={s.sectionTitle}>Attendees — {attendeesEventTitle}</h2>
             {attendeesLoading ? (
-              <p style={{ color: '#805ad5', textAlign: 'center', padding: '2rem' }}>Loading attendees...</p>
-            ) : !attendees || attendees.bookings?.length === 0 ? (
-              <div style={s.empty}>
-                <p style={s.emptyText}>No confirmed bookings for this event yet.</p>
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                <Spinner message="Loading attendees…" />
               </div>
+            ) : !attendees || attendees.bookings?.length === 0 ? (
+              <EmptyState
+                icon="🎫"
+                title="No bookings yet"
+                subtitle="No confirmed bookings for this event yet."
+              />
             ) : (
               <>
                 <div style={s.attendeeSummary}>
@@ -209,9 +234,7 @@ export default function BusinessDashboard() {
                           <td style={s.td}>{b.user?.name || '—'}</td>
                           <td style={s.td}>{b.user?.email || '—'}</td>
                           <td style={s.td}>{b.quantity}</td>
-                          <td style={s.td}>
-                            <span style={s.refPill}>{b.bookingRef}</span>
-                          </td>
+                          <td style={s.td}><span style={s.refPill}>{b.bookingRef}</span></td>
                           <td style={s.td}>
                             {new Date(b.createdAt).toLocaleDateString('en-PK', {
                               day: 'numeric', month: 'short', year: 'numeric'
@@ -226,7 +249,18 @@ export default function BusinessDashboard() {
             )}
           </div>
         )}
+
       </div>
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={confirmState.open}
+        title="Delete Event"
+        message="Are you sure you want to delete this event? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmState({ open: false, eventId: null })}
+      />
     </div>
   );
 }
@@ -242,13 +276,7 @@ const s = {
   headerSub: { fontSize: 14, color: 'rgba(255,255,255,0.8)', margin: '4px 0 0' },
   createBtn: {
     backgroundColor: '#fff', color: '#805ad5', border: 'none',
-    borderRadius: 8, padding: '8px 16px', cursor: 'pointer',
-    fontSize: 14, fontWeight: 700,
-  },
-  logoutBtn: {
-    backgroundColor: 'transparent', color: '#fff',
-    border: '1px solid rgba(255,255,255,0.4)', borderRadius: 8,
-    padding: '8px 16px', cursor: 'pointer', fontSize: 14,
+    borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 700,
   },
   container: { maxWidth: 1000, margin: '0 auto', padding: '24px 16px' },
   actionMsg: {
@@ -266,15 +294,12 @@ const s = {
   tabRow: { display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' },
   tabBtn: {
     padding: '8px 18px', borderRadius: 20, border: '1.5px solid #e2e8f0',
-    backgroundColor: 'white', color: '#718096', cursor: 'pointer',
-    fontSize: 13, fontWeight: 600,
+    backgroundColor: 'white', color: '#718096', cursor: 'pointer', fontSize: 13, fontWeight: 600,
   },
   tabActive: { backgroundColor: '#805ad5', color: '#fff', borderColor: '#805ad5' },
   section: { backgroundColor: '#fff', borderRadius: 14, padding: '24px 20px', boxShadow: '0 2px 8px rgba(128,90,213,0.08)' },
   sectionTitle: { fontSize: 18, fontWeight: 700, color: '#2d3748', marginBottom: 20, borderBottom: '2px solid #f7f3ff', paddingBottom: 12 },
   cardList: { display: 'flex', flexDirection: 'column', gap: 16 },
-  empty: { textAlign: 'center', padding: '40px 20px' },
-  emptyText: { color: '#718096', fontSize: 16, marginBottom: 16 },
   eventCard: {
     border: '1px solid #e2e8f0', borderRadius: 12, padding: '16px 20px',
     display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
@@ -285,10 +310,7 @@ const s = {
     display: 'inline-block', backgroundColor: '#f0ebff', color: '#553c9a',
     borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600,
   },
-  statusPill: {
-    display: 'inline-block', borderRadius: 20,
-    padding: '2px 10px', fontSize: 11, fontWeight: 700,
-  },
+  statusPill: { display: 'inline-block', borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700 },
   eventTitle: { fontSize: 16, fontWeight: 700, color: '#2d3748', margin: '0 0 6px' },
   eventMeta: { fontSize: 13, color: '#718096', margin: '2px 0' },
   eventCardActions: { display: 'flex', flexDirection: 'column', gap: 8, minWidth: 100 },

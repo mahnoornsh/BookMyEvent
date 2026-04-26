@@ -18,7 +18,9 @@ app.use(cors({
 }));
 
 
-app.use(express.json()); // ← ADD THIS LINE
+app.use(express.json());
+const notificationRoutes = require('./routes/notificationRoutes');
+app.use('/api/notifications', notificationRoutes);
 
 // Routes
 app.use('/api/auth', authRoutes);

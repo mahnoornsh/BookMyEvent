@@ -3,6 +3,7 @@ const router = express.Router();
 const Event = require('../models/Event');
 const { protect, restrictTo } = require('../middleware/authMiddleware');
 const { geocodeAddress } = require('../utils/geocode');
+const { createNotification } = require('../controllers/notificationController');
 
 // GET all approved events — PUBLIC
 router.get('/', async (req, res) => {
@@ -55,18 +56,10 @@ router.post('/', protect, restrictTo('business'), async (req, res) => {
     }
     const { title, description, category, date, venue, city, totalCapacity, price } = req.body;
 
-    // ── Geocode the venue + city ─────────────────────────────────────────────
     const { lat, lng } = await geocodeAddress(venue, city);
 
     const event = new Event({
-      title,
-      description,
-      category,
-      date,
-      venue,
-      city,
-      lat,
-      lng,
+      title, description, category, date, venue, city, lat, lng,
       totalCapacity,
       remainingCapacity: totalCapacity,
       price,
@@ -102,7 +95,6 @@ router.patch('/:id', protect, restrictTo('business'), async (req, res) => {
       event.remainingCapacity = event.remainingCapacity + capacityDiff;
     }
 
-    // ── Re-geocode if venue or city changed ──────────────────────────────────
     if (req.body.venue !== undefined || req.body.city !== undefined) {
       const newVenue = req.body.venue || event.venue;
       const newCity  = req.body.city  || event.city;
@@ -152,6 +144,13 @@ router.patch('/:id/approve', protect, restrictTo('admin'), async (req, res) => {
       { new: true }
     );
     if (!event) return res.status(404).json({ message: 'Event not found' });
+
+    // Notify the business organizer that their event was approved
+    await createNotification(
+      event.organizer,
+      `Your event "${event.title}" has been approved and is now live!`
+    );
+
     res.json({ message: 'Event approved', event });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -170,6 +169,13 @@ router.patch('/:id/reject', protect, restrictTo('admin'), async (req, res) => {
       { new: true }
     );
     if (!event) return res.status(404).json({ message: 'Event not found' });
+
+    // Notify the business organizer that their event was rejected
+    await createNotification(
+      event.organizer,
+      `Your event "${event.title}" was not approved. Please contact admin for more information.`
+    );
+
     res.json({ message: 'Event rejected', event });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });

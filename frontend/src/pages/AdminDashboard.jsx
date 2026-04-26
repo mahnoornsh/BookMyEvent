@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import Spinner from '../components/Spinner';
+import EmptyState from '../components/EmptyState';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -14,10 +17,9 @@ export default function AdminDashboard() {
   const [pendingBusinesses, setPendingBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionMsg, setActionMsg] = useState('');
+  const [confirmState, setConfirmState] = useState({ open: false, action: null, id: null });
 
-  useEffect(() => {
-    fetchAll();
-  }, []);
+  useEffect(() => { fetchAll(); }, []);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -47,8 +49,6 @@ export default function AdminDashboard() {
   const approveEvent = async (id) => {
     try {
       await API.patch(`/events/${id}/approve`);
-      setPendingEvents(prev => prev.filter(e => e._id !== id));
-      setStats(prev => prev ? { ...prev } : prev);
       showMsg('Event approved successfully.');
       fetchAll();
     } catch (err) {
@@ -57,7 +57,6 @@ export default function AdminDashboard() {
   };
 
   const rejectEvent = async (id) => {
-    if (!window.confirm('Reject this event?')) return;
     try {
       await API.patch(`/events/${id}/reject`);
       setPendingEvents(prev => prev.filter(e => e._id !== id));
@@ -69,7 +68,6 @@ export default function AdminDashboard() {
   };
 
   const deactivateUser = async (id) => {
-    if (!window.confirm('Deactivate this user?')) return;
     try {
       await API.patch(`/admin/users/${id}/deactivate`);
       setUsers(prev => prev.map(u => u._id === id ? { ...u, isApproved: false } : u));
@@ -92,7 +90,6 @@ export default function AdminDashboard() {
   };
 
   const rejectBusiness = async (id) => {
-    if (!window.confirm('Reject this business application?')) return;
     try {
       await API.patch(`/admin/businesses/${id}/reject`);
       setPendingBusinesses(prev => prev.filter(b => b._id !== id));
@@ -103,13 +100,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleConfirm = () => {
+    const { action, id } = confirmState;
+    if (action === 'rejectEvent') rejectEvent(id);
+    if (action === 'deactivateUser') deactivateUser(id);
+    if (action === 'rejectBusiness') rejectBusiness(id);
+    setConfirmState({ open: false, action: null, id: null });
+  };
+
   const handleLogout = () => { logout(); navigate('/login'); };
 
   if (loading) return (
-    <div style={s.center}><p style={{ color: '#805ad5', fontSize: 18 }}>Loading dashboard...</p></div>
+    <div style={s.center}>
+      <Spinner message="Loading admin data…" size="lg" />
+    </div>
   );
 
   const tabs = ['events', 'businesses', 'users'];
+
+  const confirmMeta = {
+    rejectEvent:    { title: 'Reject Event',            message: 'Are you sure you want to reject this event?',               label: 'Reject' },
+    deactivateUser: { title: 'Deactivate User',         message: 'Are you sure you want to deactivate this user?',            label: 'Deactivate' },
+    rejectBusiness: { title: 'Reject Business Account', message: 'Are you sure you want to reject this business application?', label: 'Reject' },
+  };
 
   return (
     <div style={s.page}>
@@ -123,25 +136,24 @@ export default function AdminDashboard() {
 
       <div style={s.container}>
 
-        {/* Action message */}
         {actionMsg && <div style={s.actionMsg}>{actionMsg}</div>}
 
         {/* Stats */}
         {stats && (
-        <div style={s.statsRow}>
+          <div style={s.statsRow}>
             {[
-            { label: 'Total Users', value: stats.totalUsers, color: '#805ad5' },
-            { label: 'Approved Events', value: stats.totalEvents, color: '#38a169' },
-            { label: 'Total Bookings', value: stats.totalBookings, color: '#e8547a' },
-            { label: 'Pending Events', value: stats.pendingEvents ?? pendingEvents.length, color: '#dd6b20' },
-            { label: 'Rejected Events', value: stats.rejectedEvents ?? 0, color: '#718096' },
+              { label: 'Total Users',      value: stats.totalUsers,                             color: '#805ad5' },
+              { label: 'Approved Events',  value: stats.totalEvents,                            color: '#38a169' },
+              { label: 'Total Bookings',   value: stats.totalBookings,                          color: '#e8547a' },
+              { label: 'Pending Events',   value: stats.pendingEvents ?? pendingEvents.length,  color: '#dd6b20' },
+              { label: 'Rejected Events',  value: stats.rejectedEvents ?? 0,                   color: '#718096' },
             ].map(stat => (
-            <div key={stat.label} style={s.statCard}>
+              <div key={stat.label} style={s.statCard}>
                 <span style={{ ...s.statNum, color: stat.color }}>{stat.value}</span>
                 <span style={s.statLabel}>{stat.label}</span>
-            </div>
+              </div>
             ))}
-        </div>
+          </div>
         )}
 
         {/* Tabs */}
@@ -152,9 +164,9 @@ export default function AdminDashboard() {
               style={{ ...s.tabBtn, ...(activeTab === tab ? s.tabActive : {}) }}
               onClick={() => setActiveTab(tab)}
             >
-              {tab === 'events' ? `Pending Events (${pendingEvents.length})`
-                : tab === 'businesses' ? `Business Approvals (${pendingBusinesses.length})`
-                : `Users (${users.length})`}
+              {tab === 'events'     ? `Pending Events (${pendingEvents.length})`
+               : tab === 'businesses' ? `Business Approvals (${pendingBusinesses.length})`
+               : `Users (${users.length})`}
             </button>
           ))}
         </div>
@@ -164,9 +176,11 @@ export default function AdminDashboard() {
           <div style={s.section}>
             <h2 style={s.sectionTitle}>Pending Event Approvals</h2>
             {pendingEvents.length === 0 ? (
-              <div style={s.empty}>
-                <p style={s.emptyText}>No pending events. All caught up!</p>
-              </div>
+              <EmptyState
+                icon="📋"
+                title="No pending events"
+                subtitle="All caught up! No events are awaiting approval."
+              />
             ) : (
               <div style={s.cardList}>
                 {pendingEvents.map(event => (
@@ -174,9 +188,7 @@ export default function AdminDashboard() {
                     <div style={s.eventCardLeft}>
                       <div style={s.categoryTag}>{event.category}</div>
                       <h3 style={s.eventTitle}>{event.title}</h3>
-                      <p style={s.eventMeta}>
-                        {event.city} — {event.venue}
-                      </p>
+                      <p style={s.eventMeta}>{event.city} — {event.venue}</p>
                       <p style={s.eventMeta}>
                         {new Date(event.date).toLocaleDateString('en-PK', {
                           day: 'numeric', month: 'short', year: 'numeric'
@@ -194,7 +206,10 @@ export default function AdminDashboard() {
                       <button style={s.approveBtn} onClick={() => approveEvent(event._id)}>
                         Approve
                       </button>
-                      <button style={s.rejectBtn} onClick={() => rejectEvent(event._id)}>
+                      <button
+                        style={s.rejectBtn}
+                        onClick={() => setConfirmState({ open: true, action: 'rejectEvent', id: event._id })}
+                      >
                         Reject
                       </button>
                     </div>
@@ -210,9 +225,11 @@ export default function AdminDashboard() {
           <div style={s.section}>
             <h2 style={s.sectionTitle}>Pending Business Account Approvals</h2>
             {pendingBusinesses.length === 0 ? (
-              <div style={s.empty}>
-                <p style={s.emptyText}>No pending business applications.</p>
-              </div>
+              <EmptyState
+                icon="🏢"
+                title="No pending business applications"
+                subtitle="All business applications have been reviewed."
+              />
             ) : (
               <div style={s.cardList}>
                 {pendingBusinesses.map(biz => (
@@ -229,7 +246,10 @@ export default function AdminDashboard() {
                       <button style={s.approveBtn} onClick={() => approveBusiness(biz._id)}>
                         Approve
                       </button>
-                      <button style={s.rejectBtn} onClick={() => rejectBusiness(biz._id)}>
+                      <button
+                        style={s.rejectBtn}
+                        onClick={() => setConfirmState({ open: true, action: 'rejectBusiness', id: biz._id })}
+                      >
                         Reject
                       </button>
                     </div>
@@ -245,7 +265,11 @@ export default function AdminDashboard() {
           <div style={s.section}>
             <h2 style={s.sectionTitle}>All Users</h2>
             {users.length === 0 ? (
-              <div style={s.empty}><p style={s.emptyText}>No users found.</p></div>
+              <EmptyState
+                icon="👥"
+                title="No users found"
+                subtitle="No registered users yet."
+              />
             ) : (
               <div style={s.tableWrapper}>
                 <table style={s.table}>
@@ -264,18 +288,29 @@ export default function AdminDashboard() {
                         <td style={s.td}>{u.name}</td>
                         <td style={s.td}>{u.email}</td>
                         <td style={s.td}>
-                          <span style={{ ...s.rolePill, backgroundColor: u.role === 'admin' ? '#ebf8ff' : '#f0fff4', color: u.role === 'admin' ? '#2b6cb0' : '#276749' }}>
+                          <span style={{
+                            ...s.rolePill,
+                            backgroundColor: u.role === 'admin' ? '#ebf8ff' : '#f0fff4',
+                            color: u.role === 'admin' ? '#2b6cb0' : '#276749'
+                          }}>
                             {u.role}
                           </span>
                         </td>
                         <td style={s.td}>
-                          <span style={{ ...s.rolePill, backgroundColor: u.isApproved === false ? '#fff5f5' : '#f0fff4', color: u.isApproved === false ? '#c53030' : '#276749' }}>
+                          <span style={{
+                            ...s.rolePill,
+                            backgroundColor: u.isApproved === false ? '#fff5f5' : '#f0fff4',
+                            color: u.isApproved === false ? '#c53030' : '#276749'
+                          }}>
                             {u.isApproved === false ? 'Inactive' : 'Active'}
                           </span>
                         </td>
                         <td style={s.td}>
                           {u.isApproved !== false && u.role !== 'admin' && (
-                            <button style={s.deactivateBtn} onClick={() => deactivateUser(u._id)}>
+                            <button
+                              style={s.deactivateBtn}
+                              onClick={() => setConfirmState({ open: true, action: 'deactivateUser', id: u._id })}
+                            >
                               Deactivate
                             </button>
                           )}
@@ -290,6 +325,16 @@ export default function AdminDashboard() {
         )}
 
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmState.open}
+        title={confirmMeta[confirmState.action]?.title || 'Confirm'}
+        message={confirmMeta[confirmState.action]?.message || 'Are you sure?'}
+        confirmLabel={confirmMeta[confirmState.action]?.label || 'Confirm'}
+        onConfirm={handleConfirm}
+        onCancel={() => setConfirmState({ open: false, action: null, id: null })}
+      />
     </div>
   );
 }
@@ -304,11 +349,6 @@ const s = {
   },
   headerTitle: { fontSize: 24, fontWeight: 700, color: '#fff', margin: 0 },
   headerSub: { fontSize: 14, color: 'rgba(255,255,255,0.8)', margin: '4px 0 0' },
-  logoutBtn: {
-    backgroundColor: 'transparent', color: '#fff',
-    border: '1px solid rgba(255,255,255,0.4)', borderRadius: 8,
-    padding: '8px 16px', cursor: 'pointer', fontSize: 14,
-  },
   container: { maxWidth: 1000, margin: '0 auto', padding: '24px 16px' },
   actionMsg: {
     backgroundColor: '#c6f6d5', border: '1px solid #9ae6b4', color: '#276749',
@@ -332,8 +372,6 @@ const s = {
   section: { backgroundColor: '#fff', borderRadius: 14, padding: '24px 20px', boxShadow: '0 2px 8px rgba(128,90,213,0.08)' },
   sectionTitle: { fontSize: 18, fontWeight: 700, color: '#2d3748', marginBottom: 20, borderBottom: '2px solid #f7f3ff', paddingBottom: 12 },
   cardList: { display: 'flex', flexDirection: 'column', gap: 16 },
-  empty: { textAlign: 'center', padding: '40px 20px' },
-  emptyText: { color: '#718096', fontSize: 16 },
   eventCard: {
     border: '1px solid #e2e8f0', borderRadius: 12, padding: '16px 20px',
     display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
@@ -351,8 +389,7 @@ const s = {
   eventCardActions: { display: 'flex', flexDirection: 'column', gap: 8, minWidth: 100 },
   approveBtn: {
     backgroundColor: '#38a169', color: '#fff', border: 'none',
-    borderRadius: 8, padding: '8px 16px', cursor: 'pointer',
-    fontSize: 13, fontWeight: 600,
+    borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600,
   },
   rejectBtn: {
     backgroundColor: 'transparent', color: '#e53e3e',

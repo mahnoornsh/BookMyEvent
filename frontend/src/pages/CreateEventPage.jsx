@@ -1,9 +1,14 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import API from '../api/axios';
 import '../styles/auth.css';
 import CATEGORIES from '../data/categories';
+import AuthContext from '../context/AuthContext';
+import Spinner from '../components/Spinner';
+import EmptyState from '../components/EmptyState';
 
 function CreateEventPage() {
+  const { user } = useContext(AuthContext);
+
   const [form, setForm] = useState({
     title: '', description: '', category: '',
     date: '', venue: '', city: '', totalCapacity: '', price: ''
@@ -49,7 +54,6 @@ function CreateEventPage() {
       return;
     }
     try {
-      //parsing numbers before sending - Mongoose req
       const res = await API.post('/events', {
         ...form,
         totalCapacity: parseInt(form.totalCapacity),
@@ -64,6 +68,24 @@ function CreateEventPage() {
       setMessage(err.response?.data?.message || 'Failed to create event.');
     }
   };
+
+  //block unapproved business accs before rendering form
+  if (user && user.isApproved === false) {
+    return (
+      <div className="auth-page">
+        <div className="blob blob-1" />
+        <div className="blob blob-2" />
+        <div className="pending-approval-banner">
+          <span className="pending-icon">⏳</span>
+          <h2>Account Pending Approval</h2>
+          <p>
+            Your business account is currently awaiting admin approval.
+            You'll be able to create events once your account has been reviewed.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const inputStyle = {
     padding: '0.78rem 1rem',
